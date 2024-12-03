@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+/CPM_modules/
+/_deps/
+/cmake/
+/cmake-build-debug/
+/CMakeCache.txt
+/.vscode/
