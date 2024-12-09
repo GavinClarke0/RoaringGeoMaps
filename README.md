@@ -2,6 +2,12 @@
 
 ---
 
+## See Issue #2 For Updated File Format Which will be the new approach going forward due to higher preformance: https://github.com/GavinClarke0/RoaringGeoMaps/issues/2
+
+This approaches reduces the number of cells required to be stored significantly and can lead to 30x read + write preformance improvements. This will eventually merged into main. 
+
+
+---
 
 RoaringGeoMaps is a high performance and compact single-file spatial index designed to index any geospatial data that can be 
 represented by a sequence of bytes and a [S2 region cover](http://s2geometry.io/devguide/examples/coverings.html). Users 
