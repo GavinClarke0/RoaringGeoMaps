@@ -92,14 +92,44 @@ public:
     offsets(VectorView<uint64_t>(f, position, entries)){};
 
     std::vector<T> readIndexes(const std::vector<uint32_t>& indexes) {
-        // TODO: validate it is not out of bounds
         std::vector<T> valueRefs;
         for (auto index: indexes) {
             uint64_t offset = index == 0 ? 0: offsets[index-1];
             auto pos = valuePosition + offset;
-            std::integral auto valueSize = index == 0 ? offsets[index]: offsets[index] - offsets[index-1];
+            std::integral auto valueSize = index == 0
+                                             ? offsets[index]
+                                             : offsets[index] - offsets[index-1];
             valueRefs.emplace_back(readValue(f, pos, valueSize));
         }
+        return valueRefs;
+    };
+
+    // TODO: we can compact this into a more granular method that reads a specific range in a iterator. We can then
+    // make a overall method that reads both indexes and ranges which searches from the nearest offset to reduce search
+    // space.
+    std::vector<T> readIndexRanges(const std::vector<std::pair<uint32_t, uint32_t>>& indexRanges) {
+        std::vector<T> valueRefs;
+        for (const auto& range : indexRanges) {
+            uint32_t start = range.first;
+            uint32_t end = range.second;
+            // Validate range boundaries
+            if (start > end || end >= offsets.size()) {
+                throw std::out_of_range("Index range out of bounds or invalid");
+            }
+
+            // Read all values within the range
+            for (uint32_t index = start; index <= end; ++index) {
+                uint64_t offset = (index == 0) ? 0 : offsets[index - 1];
+                auto pos = valuePosition + offset;
+
+                std::integral auto valueSize = (index == 0)
+                                               ? offsets[index]
+                                               : offsets[index] - offsets[index - 1];
+
+                valueRefs.emplace_back(readValue(f, pos, valueSize));
+            }
+        }
+
         return valueRefs;
     };
     // Must be overridden by implementing class
@@ -137,6 +167,40 @@ public:
             }
         }
         return indexes;
+    };
+
+    std::vector<std::pair<uint32_t, uint32_t>> queryValueRangesIndexes(const std::vector<std::pair<T, T>>& queryRanges) {
+        // TODO: validate it is not out of bounds
+        std::vector<std::pair<uint32_t, uint32_t>> indexRanges;
+
+        for (const auto& range : queryRanges) {
+            // Find the start of the range
+            auto lowerIt = std::lower_bound(values.begin(), values.end(), range.first);
+            // Find the end of the range (exclusive)
+            auto upperIt = std::upper_bound(lowerIt, values.end(), range.second);
+
+            if (lowerIt != values.end() && lowerIt < upperIt) {
+                // Calculate the start and end indexes for this range
+                auto startIndex = static_cast<uint32_t>(std::distance(values.begin(), lowerIt));
+                auto endIndex = static_cast<uint32_t>(std::distance(values.begin(), upperIt));
+
+                // if the range is not contained in the block then the last index would be the blocksize-1;
+                if (upperIt == values.end()) {
+                    endIndex--;
+                }
+
+                if (!indexRanges.empty() && indexRanges.back().second >= startIndex) {
+                    // Merge overlapping or adjacent ranges; note we probably don;t have to do this if we assume all
+                    // input is from s2 region covers.
+                    indexRanges.back().second = std::max(indexRanges.back().second, endIndex);
+                } else {
+                    // Add a new range
+                    indexRanges.emplace_back(startIndex, endIndex);
+                }
+            }
+        }
+
+        return indexRanges;
     };
 private:
     FileReadBuffer& f;

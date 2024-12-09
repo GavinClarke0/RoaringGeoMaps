@@ -25,7 +25,7 @@
  */
 
 
-Header::Header(int levelIndexBucketRange): levelIndexBucketRange(levelIndexBucketRange), blockSize(512), fileType(0) {
+Header::Header(int levelIndexBucketRange, int blockSize): levelIndexBucketRange(levelIndexBucketRange), blockSize(blockSize), fileType(0) {
 }
 Header::Header() = default;
 

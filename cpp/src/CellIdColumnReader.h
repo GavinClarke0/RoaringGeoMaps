@@ -2,10 +2,10 @@
 #define ROARINGGEOMAPS_CELLIDCOLUMNREADER_H
 
 #include "io/FileReadBuffer.h"
-#include "BlockIndexReader.h"
 #include "BlockOffset.h"
 #include "Block.h"
 #include "ReaderHelpers.h"
+#include "S2BlockIndexReader.h"
 #include <set>
 #include <cmath>
 
@@ -20,10 +20,10 @@ public:
     CellIdColumnReader(FileReadBuffer& f, uint64_t startPos, uint64_t size, uint32_t entries, uint16_t blockSize);
     Uint64BlockReader ReadBlock(uint32_t blockIndex);
     std::vector<uint32_t> FilterIndexBlock(uint64_t blockId, std::vector<uint64_t> &values);
-    BlockIndexReader<uint64_t, std::set<uint64_t>::iterator>& BlockIndex();
+    S2BlockIndexReader& BlockIndex();
 private:
     FileReadBuffer& f;
-    BlockIndexReader<uint64_t, std::set<uint64_t>::iterator> blockIndex;
+    S2BlockIndexReader blockIndex;
     BlockOffsetReader blockOffset;
     uint64_t startPos;
     uint64_t size;

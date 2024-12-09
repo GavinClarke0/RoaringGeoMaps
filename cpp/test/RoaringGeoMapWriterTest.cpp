@@ -10,7 +10,7 @@
 
 TEST(RoaringGeoMapWriterTest, WriteSingleCellId) {
     // Arrange
-    RoaringGeoMapWriter writer(3);
+    RoaringGeoMapWriter writer(1);
 
     // Define a single S2CellId
     S2LatLng latlng = S2LatLng::FromDegrees(37.7749, -122.4194); // San Francisco
@@ -38,10 +38,10 @@ TEST(RoaringGeoMapWriterTest, WriteSingleCellId) {
     // Clean up
     std::remove(testFilePath.c_str());
 }
-
+//
 TEST(RoaringGeoMapWriterTest, WriteAndQueryPolygon) {
     // Arrange
-    RoaringGeoMapWriter writer(3);
+    RoaringGeoMapWriter writer(1);
 
     // Define a square polygon
     std::vector<S2LatLng> vertices = {
@@ -95,7 +95,7 @@ TEST(RoaringGeoMapWriterTest, WriteAndQueryPolygon) {
 
 TEST(RoaringGeoMapWriterTest, QueryNonExistentCellId) {
     // Arrange
-    RoaringGeoMapWriter writer(3);
+    RoaringGeoMapWriter writer(1);
 
     // Write some dummy data
     S2LatLng latlng = S2LatLng::FromDegrees(37.7749, -122.4194); // San Francisco
@@ -200,7 +200,7 @@ TEST(RoaringGeoMapWriterTest, WriteS2RegionCover) {
     cellUnion.Init(covering);
     writer.write(cellUnion, "shapefile-id");
 
-    for (int i = 0; i < 2500; i++) {
+    for (int i = 0; i < 20000; i++) {
         S2CellUnion pointCellUnion;
         std::vector<S2CellId> pointCells;
         pointCells.push_back(generateS2CellIdInUS());
@@ -235,8 +235,8 @@ TEST(RoaringGeoMapWriterTest, WriteS2RegionCover) {
     for (int i = 0; i < 500; i++) {
         S2CellUnion pointCellUnion;
         std::vector<S2CellId> pointCells;
-        pointCells.insert(pointCells.end(), cellIds.begin(), cellIds.end());
-        pointCells.push_back(generateS2CellIdInUS());
+        //pointCells.insert(pointCells.end(), cellIds.begin(), cellIds.end());
+        pointCells.push_back(generateS2CellIdInUS().parent(3));
         pointCellUnion.Init(pointCells);
 
         auto queryResults = reader.Contains(pointCellUnion);

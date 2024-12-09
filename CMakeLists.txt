@@ -53,7 +53,7 @@ add_library(RoaringGeoMapsLib STATIC
     cpp/src/BlockIndexWriter.cpp
     cpp/src/BlockIndexWriter.h
     cpp/src/Block.h
-    cpp/src/BlockFilter.h cpp/src/Block.cpp cpp/src/Block.cpp cpp/benchmarks/main.cpp)
+     cpp/src/Block.cpp cpp/src/Block.cpp cpp/benchmarks/main.cpp cpp/src/S2BlockIndexReader.cpp)
 
 target_link_libraries(
     RoaringGeoMapsLib
@@ -75,7 +75,7 @@ target_link_libraries(
     ${OPENSSL_LIBRARIES}
 )
 
-add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp)
+add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp cpp/src/S2BlockIndexReader.h)
 target_link_libraries(
         RoaringGeoMapsBenchmarks
         RoaringGeoMapsLib

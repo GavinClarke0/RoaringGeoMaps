@@ -16,7 +16,7 @@ blockOffset(f, startPos + blockIndex.sizeOf(), determineBlocks(blockSize, entrie
 
 Uint64BlockReader CellIdColumnReader::ReadBlock(uint32_t block) {
     auto [start, sizeOf] = blockOffset.BlockPos(block);
-    uint32_t blockEntries = block * blockSize < entries ? blockSize : entries % blockSize; // TODO this is likely wrong
+    uint32_t blockEntries = (block+1) * blockSize < entries ? blockSize : entries % blockSize; // TODO this is likely wrong
     return Uint64BlockReader(f, dataPos() + start, sizeOf, blockEntries);
 };
 
@@ -47,7 +47,7 @@ std::vector<uint32_t> CellIdColumnReader::FilterIndexBlock(uint64_t blockId, std
 }
 
 // TODO figure out if this is how I want to handle the API or if this should be separate from the column.,
-BlockIndexReader<uint64_t, std::set<uint64_t>::iterator> &CellIdColumnReader::BlockIndex() {
+S2BlockIndexReader& CellIdColumnReader::BlockIndex() {
     return blockIndex;
 }
 

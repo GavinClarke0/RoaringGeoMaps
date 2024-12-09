@@ -12,12 +12,6 @@
 #include "ByteColumnReader.h"
 #include "RoaringBitmapColumnReader.h"
 
-// Struct which maps a block id to values contained in the block.
-template <typename T>
-struct BlockContents{
-    uint32_t blockId;
-    std::vector<T> values;
-};
 
 class RoaringGeoMapReader {
 
@@ -38,6 +32,7 @@ private:
     std::unique_ptr<RoaringBitmapColumnReader> bitmapColumn;
 
     roaring::Roaring queryBlock(uint32_t& blockId, std::vector<uint64_t>& values);
+    roaring::Roaring queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &valueRanges, std::vector<uint64_t> &values);
     std::vector<BlockValues<uint32_t>> queryBlocksByIndexes(roaring::Roaring& queryValues);
 };
 

@@ -11,7 +11,7 @@ const uint32_t HEADER_SIZE = 128; // Header is 32 byte aligned to allow for use 
 class Header {
 public:
 
-    explicit Header(int);
+    explicit Header(int, int);
     Header();
 
     void writeToFile(FileWriteBuffer &file) const;
@@ -71,7 +71,7 @@ private:
     uint64_t roaringIndexSize = 0;
     uint32_t keyIndexEntries = 0;
     uint32_t cellIndexEntries = 0;
-    uint8_t levelIndexBucketRange;
+    uint8_t levelIndexBucketRange = 1;
     uint16_t blockSize;
     uint8_t fileType;
 

@@ -11,11 +11,11 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
     // Initialize other members or perform additional setup as needed
     header = Header::readFromFile(*f);
 
-    auto coverBitmapPos = header.getCoverBitmapOffset();
-                   coversBitmap = roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
-
-    auto containsBitmapPos = header.getContainsBitmapOffset();
-    containsBitmap = roaring::Roaring64Map::frozenView(f->view(containsBitmapPos.first, containsBitmapPos.second));
+//    auto coverBitmapPos = header.getCoverBitmapOffset();
+//    coversBitmap = roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
+//
+//    auto containsBitmapPos = header.getContainsBitmapOffset();
+//    containsBitmap = roaring::Roaring64Map::frozenView(f->view(containsBitmapPos.first, containsBitmapPos.second));
 
     auto [keyColumnOffset, keyColumnSize] = header.getKeyIndexPos();
     keyColumn = std::make_unique<ByteColumnReader>(*f, keyColumnOffset, keyColumnSize, header.getKeyIndexEntries(), header.getBlockSize());
@@ -31,39 +31,34 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
 RoaringGeoMapReader::~RoaringGeoMapReader()= default;
 
 
-std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion &queryRegion) {
+std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion& queryRegionNormalized) {
 
-    // 1. Normalize the cell id to the same levels that we stored the cells at.
-    auto normalizedQueryRegion = std::vector<S2CellId>(); // May not need a unique pointer do to the lifetime
-    queryRegion.Denormalize(MIN_LEVEL, header.getLevelIndexBucketRange(), &normalizedQueryRegion);
+    // 1. Denormalize the cell id to the same levels that we stored the cells at.
+    auto queryRegion = std::vector<S2CellId>(); // May not need a unique pointer do to the lifetime
+    queryRegionNormalized.Denormalize(MIN_LEVEL, header.getLevelIndexBucketRange(), &queryRegion);
 
-    // 2. Search the contains and the query bitmap for if any query cell id's are present. This is a naive approach
-    // for now that can likely be improved via fastmap for large cell sets.
-    std::set<uint64_t> queryCellIds; // TODO: determine a method without a set.
-    for (auto cellId : normalizedQueryRegion) {
-        for (int i = cellId.level(); i >= MIN_LEVEL; i -= header.getLevelIndexBucketRange() ) {
-            queryCellIds.insert(cellId.parent(i).id());
+    // Find the ranges of cellIds for each cell in the query region.
+    std::vector<std::pair<uint64_t, uint64_t>> cellRanges;
+    for (auto cellId : queryRegion) {
+        // Insert the range of CellIds that contains the child cells of each cell in the query region.
+        cellRanges.emplace_back(std::pair<uint64_t, uint64_t>(cellId.range_min().id(), cellId.range_max().id()));
+    }
+
+    // FInd the ancestor cells of each cell in the query region.
+    std::set<uint64_t> cellAncestors;
+    for (auto cellId : queryRegion) {
+        for (int i = cellId.level()-header.getLevelIndexBucketRange(); i >= MIN_LEVEL; i -= header.getLevelIndexBucketRange() ) {
+            cellAncestors.insert(cellId.parent(i).id());
         }
     }
-    std::set<uint64_t> cellSet;
-    for(auto cellId: normalizedQueryRegion) {
-        if (coversBitmap.contains(cellId.id()))
-                cellSet.insert(cellId.id());
-    }
-    for(auto cellId: queryCellIds) {
-        if (containsBitmap.contains(cellId))
-                cellSet.insert(cellId);
-}
 
-// 3. Index allows you to determine which blocks of the column hold query values. As the cellId and KeyId
-// columns are align so that the cellId at index x corresponds to the bitmap of key id at index x. CellIds
-// in block y, store the keyIds which are in the cellId also in block y of the bitmap column)
-    BlockIndexReader<uint64_t, std::set<uint64_t>::iterator> cellIdBlockIndex= cellIdColumn->BlockIndex();
-    auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellSet);
+    auto cellIdBlockIndex= cellIdColumn->BlockIndex();
+    auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellRanges, cellAncestors);
     roaring::Roaring resultKeyIds;
+
     for (auto blockValue: blocksValues) {
         // Collect the total set of key ids found in all blocks;
-        resultKeyIds |= queryBlock(blockValue.blockId, blockValue.values);
+        resultKeyIds |= queryBlockValues(blockValue.blockId, blockValue.ranges, blockValue.values);
     }
 
     auto keyBlockValues = queryBlocksByIndexes(resultKeyIds);
@@ -81,7 +76,8 @@ std::vector<std::vector<char>> RoaringGeoMapReader::Intersects(const S2CellUnion
     return {};
 }
 
-roaring::Roaring RoaringGeoMapReader::queryBlock(uint32_t &blockId, std::vector<uint64_t> &values) {
+
+roaring::Roaring RoaringGeoMapReader::queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &ranges, std::vector<uint64_t> &values)  {
     // CellId and KeyId (RoaringBitMap columns are aligned. Cell Ids found at index x in the cell block's correspond
     // to bitmaps of all keyIds present in the cell at the same index.
     auto cellIdBlock = cellIdColumn->ReadBlock(blockId); // TODO should probably cache this
@@ -90,12 +86,27 @@ roaring::Roaring RoaringGeoMapReader::queryBlock(uint32_t &blockId, std::vector<
     // Since we only query for values we know are in the index due to their presence in the contains and
     // covers index bitmaps we can construct the result set without worrying about allocating for a result
     // which may never be present.
-    roaring::Roaring keyIds; // TODO see if a better result type is prefered. No idea if there is an advantage here.
     auto indexes = cellIdBlock.queryValueIndexes(values);
-    auto keyIdsBitmaps = keyIdBlock.readIndexes(indexes);
-    for (const auto& bitmap: keyIdsBitmaps){
+    auto indexRanges = cellIdBlock.queryValueRangesIndexes(ranges);
+
+    // TODO: improve the below code to use fast union. AN example is available below:
+    //    std::vector<roaring::Roaring> indexKeyIds;
+    //    roaring::Roaring keyIds;
+    //    indexKeyIds = keyIdBlock.readIndexRanges(indexRanges);
+    //    roaring::Roaring::fastunion(indexKeyIds.size(), indexKeyIds.data());
+    //    indexKeyIds = keyIdBlock.readIndexes(indexes);
+    //    keyIds.fastunion(indexKeyIds.size(), indexKeyIds.data());
+
+    roaring::Roaring keyIds;
+    for (const auto& bitmap: keyIdBlock.readIndexes(indexes)){
         keyIds |= bitmap;
     }
+
+    auto keyIndexes = keyIdBlock.readIndexes(indexes);
+    for (const auto& bitmap:  keyIdBlock.readIndexRanges(indexRanges)){
+        keyIds |= bitmap;
+    }
+
     return keyIds;
 }
 
