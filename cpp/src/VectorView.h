@@ -84,32 +84,5 @@ VectorView<T>::VectorView(FileReadBuffer& f, uint64_t pos, uint64_t size) {
     values = std::vector<T>(tPtr, tPtr + size);
 }
 
-
-//template <std::integral T>
-//class VectorView {
-//private:
-//    std::vector<T> values;
-//public:
-//    using iterator = typename std::vector<T>::const_iterator;
-//    using const_iterator = typename std::vector<T>::const_iterator;
-//
-//    explicit VectorView(FileReadBuffer& f, uint64_t pos, uint64_t size);
-//
-//    // Const and non-const versions of begin()
-//    const_iterator begin() const { return values.cbegin(); }
-//    const_iterator end() const { return values.cend(); }
-//
-//    // Accessor to retrieve values by index
-//    const T& operator[](size_t index) const { return values[index]; }
-//
-//    // Size of the underlying vector
-//    size_t size() const { return values.size(); }
-//};
-//
-//template <std::integral T>
-//VectorView<T>::VectorView(FileReadBuffer& f, uint64_t pos, uint64_t size) {
-//    const auto* tPtr = reinterpret_cast<const T*>(f.view(pos, size * sizeof(T)));
-//    values = std::vector<T>(tPtr, tPtr + size);
-//}
 #endif //ROARINGGEOMAPS_VECTORVIEW_H
 

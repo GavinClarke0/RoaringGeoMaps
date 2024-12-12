@@ -25,35 +25,37 @@ include_directories(cpp/vendor/CRoaring/include)
 
 # Add the new source files to the library
 add_library(RoaringGeoMapsLib STATIC 
-    cpp/src/RoaringGeoMapWriter.cpp 
-    cpp/src/RoaringGeoMapWriter.h 
-    cpp/src/RoaringGeoMapReader.cpp
-    cpp/src/ByteColumnWriter.cpp
-    cpp/src/ByteColumnWriter.h
-    cpp/src/RoaringBitmapColumnWriter.cpp
-    cpp/src/CellIdColumnWriter.cpp
-    cpp/src/CellIdColumnWriter.h
-    cpp/src/Header.cpp
-    cpp/src/Header.h
-    cpp/src/BlockIndexReader.h
-    cpp/src/io/FileWriteBuffer.cpp
-    cpp/src/io/FileWriteBuffer.h
-    cpp/src/io/FileReadBuffer.cpp
-    cpp/src/io/FileReadBuffer.h
-    cpp/src/ReaderHelpers.h
-    cpp/src/RoaringGeoMapReader.h
-    cpp/src/endian/endian.h
-    cpp/src/CellIdColumnReader.cpp
-    cpp/src/CellIdColumnReader.h
-    cpp/src/RoaringBitmapColumnReader.cpp
-    cpp/src/RoaringBitmapColumnReader.h
-    cpp/src/ByteColumnReader.cpp
-    cpp/src/ByteColumnReader.h
-    cpp/src/VectorView.h
-    cpp/src/BlockIndexWriter.cpp
-    cpp/src/BlockIndexWriter.h
-    cpp/src/Block.h
-     cpp/src/Block.cpp cpp/src/Block.cpp cpp/benchmarks/main.cpp cpp/src/S2BlockIndexReader.cpp)
+        cpp/src/RoaringGeoMapWriter.cpp
+        cpp/src/RoaringGeoMapWriter.h
+        cpp/src/RoaringGeoMapReader.cpp
+        cpp/src/ByteColumnWriter.cpp
+        cpp/src/ByteColumnWriter.h
+        cpp/src/RoaringBitmapColumnWriter.cpp
+        cpp/src/CellIdColumnWriter.cpp
+        cpp/src/CellIdColumnWriter.h
+        cpp/src/Header.cpp
+        cpp/src/Header.h
+        cpp/src/io/FileWriteBuffer.cpp
+        cpp/src/io/FileWriteBuffer.h
+        cpp/src/io/FileReadBuffer.cpp
+        cpp/src/io/FileReadBuffer.h
+        cpp/src/ReaderHelpers.h
+        cpp/src/RoaringGeoMapReader.h
+        cpp/src/endian/endian.h
+        cpp/src/CellIdColumnReader.cpp
+        cpp/src/CellIdColumnReader.h
+        cpp/src/RoaringBitmapColumnReader.cpp
+        cpp/src/RoaringBitmapColumnReader.h
+        cpp/src/ByteColumnReader.cpp
+        cpp/src/ByteColumnReader.h
+        cpp/src/VectorView.h
+        cpp/src/BlockIndexWriter.cpp
+        cpp/src/BlockIndexWriter.h
+        cpp/src/Block.h
+        cpp/src/Block.cpp
+        cpp/src/Block.cpp
+        cpp/benchmarks/main.cpp
+        cpp/src/S2BlockIndexReader.cpp)
 
 target_link_libraries(
     RoaringGeoMapsLib

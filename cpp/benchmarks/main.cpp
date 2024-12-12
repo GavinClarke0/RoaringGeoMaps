@@ -107,7 +107,7 @@ int main() {
 
     // Number of circles and radius of circles in meters for benchmarking
     int numCircles = 1000000;
-    double radius_meters = 10; // 10m radius
+    double radius_meters = 1000; // 10m radius
 
     // Vector to store indexed cellIds
     std::vector<std::vector<S2CellId>> indexedCellIds;

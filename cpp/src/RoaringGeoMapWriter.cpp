@@ -23,14 +23,6 @@ bool RoaringGeoMapWriter::write(const S2CellUnion &region, const std::string &ke
     roaring::Roaring64Map regionCoverBitMap;
     regionCoverBitMap.addMany(region.size(), reinterpret_cast<const uint64_t*>(region.data()));
 
-    // 2. Add new region cover to global cell inclusion map by taking the union of the new regions bit map
-    // and the index entire region cover.
-
-    // TODO: expose batch method which uses fastUnion on multiple maps at once.
-    //indexRegionCoversBitMap |= regionCoverBitMap;
-    //indexRegionContainsBitMap |= regionContainsBitmap;
-    // 3. Store the key -> pair mapping for finally constructing the index.
-
     keysToRegionCover.insert({key, std::move(regionCoverBitMap)});
     return true;
 }
