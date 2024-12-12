@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "RoaringGeoMapWriter.h"
 #include "RoaringGeoMapReader.h"
+#include "s2/s2earth.h"
 #include <s2/s2latlng.h>
 #include <s2/s2cell_id.h>
 #include <s2/s2region_coverer.h>
@@ -34,14 +35,14 @@ S2Cap generateRandomCircle(double radius_meters) {
     S2LatLng s2_latlng = S2LatLng::FromDegrees(lat, lng);
 
     // Create a circle (S2Cap) centered at the random point with the given radius
-    S2Cap circle = S2Cap::FromCenterHeight(s2_latlng.ToPoint(), radius_meters  / 6371.0);
+    S2Cap circle = S2Cap::FromCenterHeight(s2_latlng.ToPoint(), S2Earth::MetersToRadians(radius_meters));
     return circle;
 }
 
 // Function to generate cellIds for a circle
 std::vector<S2CellId> coverCircleWithCells(S2Cap& circle) {
     S2RegionCoverer::Options options;
-    options.set_max_cells(200);  // Limit the number of cells in the cover
+    options.set_max_cells(15);  // Limit the number of cells in the cover
     S2RegionCoverer coverer(options);
 
     std::vector<S2CellId> covering;
@@ -105,8 +106,8 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    int numCircles = 20000;
-    double radius_meters = 0.01; // 10m radius
+    int numCircles = 1000000;
+    double radius_meters = 1000; // 10m radius
 
     // Vector to store indexed cellIds
     std::vector<std::vector<S2CellId>> indexedCellIds;
@@ -114,18 +115,29 @@ int main() {
     // Benchmark writing circles
     auto start_write = std::chrono::high_resolution_clock::now();
     benchmarkWriteCircles(writer, numCircles, radius_meters, indexedCellIds);
-    writer.build(fileName);
     auto end_write = std::chrono::high_resolution_clock::now();
-    auto write_duration = std::chrono::duration_cast<std::chrono::seconds>(end_write - start_write).count();
-    std::cout << "Write benchmark completed in " << write_duration << " seconds.\n";
+    auto write_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_write - start_write).count();
+    std::cout << "Write benchmark completed in " << write_duration << " ms.\n";
+
+    auto start_build = std::chrono::high_resolution_clock::now();
+    writer.build(fileName);
+    auto end_build= std::chrono::high_resolution_clock::now();
+    auto build_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_build - start_build).count();
+    std::cout << "Build benchmark completed in " << build_duration << " ms.\n";
 
     // Benchmark querying the index with circles
+    auto start_init = std::chrono::high_resolution_clock::now();
     RoaringGeoMapReader reader(fileName);
+    auto end_init = std::chrono::high_resolution_clock::now();
+    auto init_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_init - start_init).count();
+    std::cout << "Init benchmark completed in " << init_duration << " ms.\n";
+
+
     auto start_query = std::chrono::high_resolution_clock::now();
     benchmarkQueryExecution(reader, 20000, indexedCellIds);
     auto end_query = std::chrono::high_resolution_clock::now();
-    auto query_duration = std::chrono::duration_cast<std::chrono::seconds>(end_query - start_query).count();
-    std::cout << "Query benchmark completed in " << query_duration << " seconds.\n";
+    auto query_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_query - start_query).count();
+    std::cout << "Query benchmark completed in " << query_duration << " ms.\n";
 
     return 0;
 }

@@ -1,16 +1,15 @@
 #ifndef ROARINGGEOMAPS_VECTORVIEW_H
 #define ROARINGGEOMAPS_VECTORVIEW_H
 
-
 #include "io/FileReadBuffer.h"
 #include <vector>
 #include <concepts>
 #include <cstdint>
 #include <iterator>
 
-// VectorView returns a vector like and iterator data structure over a section of the read buffer that contains a series of
-// integrals. Data accessed through value operators is endian safe and does not preform any copies of the underlaying
-// data.
+//// VectorView returns a vector like and iterator data structure over a section of the read buffer that contains a series of
+//// integrals. Data accessed through value operators is endian safe and does not preform any copies of the underlaying
+//// data.
 template <std::integral T>
 class VectorView {
 public:
@@ -45,8 +44,21 @@ public:
             return temp;
         }
 
+        Iterator& operator--() {
+            --pos_;
+            return *this;
+        }
+
+        // Post-increment
+        Iterator operator--(int) {
+            Iterator temp = *this;
+            --(*this);
+            return temp;
+        }
+
         bool operator==(const Iterator& other) const { return pos_ == other.pos_; }
         bool operator!=(const Iterator& other) const { return pos_ != other.pos_; }
+        bool operator<(const Iterator& other) const { return pos_ < other.pos_;}
 
     private:
         pointer pos_;  // Pointer to the current element in `values`
@@ -73,3 +85,4 @@ VectorView<T>::VectorView(FileReadBuffer& f, uint64_t pos, uint64_t size) {
 }
 
 #endif //ROARINGGEOMAPS_VECTORVIEW_H
+

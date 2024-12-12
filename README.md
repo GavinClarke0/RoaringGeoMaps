@@ -27,19 +27,8 @@ RoaringGeoMaps builds on the great work or idea's of the following projects:
 
 ### Index Structure
 
-1. **Core Bitmaps**:  
-   The index relies on two primary bitmaps to determine if a set of query `cellIds` match any `cellIds` or data stored in the file.
-    - If a match is found, additional sections of the index are queried to map these `cellIds` to their corresponding keys/data.
 
-2. **Bitmap Details**:
-    - **Cover Bitmap**:  
-      Stores the region cover of each key indexed, represented at parent cell levels that are multiples of a configurable modulo.
-        - Example: If the modulo is `3`, a `cellId` of `8` would also be indexed at its parent levels `6` and `3`.
-        - Purpose: Tracks what `cellIds` cover data in the index.
-    - **Intersection Bitmap**:  
-      Stores the region cover of each `cellId` at the next greatest cell level that is a multiple of the modulo.
-        - Example: If the region cover contains a `cellId` of `5`, it would be indexed at level `6`.
-        - Purpose: Determines if query `cellIds` intersect with any indexed region.
+
 
     
 
@@ -48,16 +37,16 @@ RoaringGeoMaps builds on the great work or idea's of the following projects:
 1. **Normalize Query CellIds**:  
    The set of query `cellIds` is first normalized to the index's configured modulo.
 
-2. **Perform Bitmap Intersections**:
-    - **Step 1**:  
-      An intersection is performed between the **Cover Bitmap** and the normalized query `cellIds`.
-        - Since the Cover Bitmap indexes all parent `cellIds` that match or cover the original indexed `cellIds`, any covering `cellIds` present in the query will be found in this intersection.
-    - **Step 2**:  
-      For each query `cellId`, its parent `cellIds` are located at each indexed level (according to the modulo). These are then compared to the **Intersection Bitmap**.
-        - This operation determines if any query `cellIds` intersect with indexed cells at greater levels.
+2. **Search S2 Cell Block Index for blocks which may contain child + ancestor cells of query region**
+   - Find the range of all child cells for each cell we are querying for. To achieve this we preform binary
+     search over the S2BlockIndex to find all blocks which may contain child cells (Cells our query covers).
+   - Find the ancestor cells at each modulo of the query cells.  To achieve this we preform binary
+     search over the S2BlockIndex to find all blocks which may contain ancestor cells (Cells which are 
+     larger but our query intersects with).
+   - We then store each `CellId` that is in the index that matches the above criteria.  
 
 3. **Map CellIds to Keys**:
-    - For each intersecting `cellId` identified above, a binary search is performed to map `cellIds` to their corresponding `key_ids` (represented as `uint32`).
+    - For each intersecting `CellId` identified above, a binary search is performed to map `CellIds` to their corresponding `key_ids` (represented as `uint32`).
     - A `key_id` is the index of the byte sequence as it is stored in the byte sequence or `key` column. 
     - Using Roaring Bitmaps, this mapping is compactly stored and efficiently queried.
 
@@ -84,8 +73,6 @@ Some notes/thesis on the design:
 ```
 <start of file>
     [Header] # contains offset and other file meta data
-    [S2 cell hierarchical cover roaring bitmap] # Allows us to quickly deduce if a key matches the provided query without searching the entire s2. We can then use s2 cells present in index to quickly search present values keys. 
-    [S2 cell intersection roaring bitmap ]
     [Key/Byte Sequence Column]
     [CellID Column] # Aligned with Key_id column. I.e they have the same number of values and CellIds at index x contain keys_ids stored at index x in the Bitmap Key_Id column. 
     [Bitmap Key_Id Column]
@@ -97,11 +84,11 @@ Some notes/thesis on the design:
 ```
 <start of header>
     [uint64 header size N bytes]
-    [uint64 s2 cell hierarchical cover roaring bitmap offset N bytes]
-    [uint64 s2 cell hierarchical cover roaring bitmap size N bytes]
+    [uint64 s2 cell hierarchical cover roaring bitmap offset N bytes] # Values are still present but will be removed in future version
+    [uint64 s2 cell hierarchical cover roaring bitmap size N bytes] # Values are still present but will be removed in future version
 
-    [uint64 s2 cell intersection roaring bitmap offset N bytes]
-    [uint64 s2 cell intersection roaring bitmap size N bytes]
+    [uint64 s2 cell intersection roaring bitmap offset N bytes] # Values are still present but will be removed in future version
+    [uint64 s2 cell intersection roaring bitmap size N bytes] # Values are still present but will be removed in future version
     [uint64 key/byte sequence column offset N bytes]
     [uint64 key/byte sequence column size N bytes]
     [uint64 cellId column offset N bytes]
