@@ -1,6 +1,5 @@
 #include "BlockIndexWriter.h"
 
-#include "BlockIndexReader.h"
 #include "WriteHelpers.h"  // Assuming this contains the write functions
 
 

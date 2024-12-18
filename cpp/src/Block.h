@@ -7,6 +7,13 @@
 
 uint64_t determineBlocks(uint32_t blockSize, uint32_t totalEntries);
 
+template <typename T>
+class BlockValues{
+public:
+    uint32_t blockId;
+    std::vector<T> values;
+};
+
 template<typename T>
 class BlockWriter {
 public:

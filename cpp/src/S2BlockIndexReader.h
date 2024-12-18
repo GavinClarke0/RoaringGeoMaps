@@ -13,7 +13,6 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdint>
-#include "BlockIndexReader.h"
 
 template <typename T>
 class S2BlockValues{

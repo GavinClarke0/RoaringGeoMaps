@@ -106,7 +106,7 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    int numCircles = 1000000;
+    int numCircles = 10000;
     double radius_meters = 1000; // 10m radius
 
     // Vector to store indexed cellIds
