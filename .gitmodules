@@ -13,3 +13,6 @@
 [submodule "cpp/vendor/CRoaring"]
 	path = cpp/vendor/CRoaring
 	url = https://github.com/RoaringBitmap/CRoaring.git
+[submodule "cpp/vendor/SuRF"]
+	path = cpp/vendor/SuRF
+	url = https://github.com/efficient/SuRF.git
