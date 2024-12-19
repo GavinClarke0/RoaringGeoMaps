@@ -106,8 +106,8 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    int numCircles = 10000;
-    double radius_meters = 1000; // 10m radius
+    int numCircles = 100000;
+    double radius_meters = 10; // 10m radius
 
     // Vector to store indexed cellIds
     std::vector<std::vector<S2CellId>> indexedCellIds;

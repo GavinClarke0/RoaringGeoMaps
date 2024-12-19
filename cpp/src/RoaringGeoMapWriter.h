@@ -45,7 +45,8 @@ private:
     int levelIndexBucketRange;
     roaring::Roaring64Map indexRegionContainsBitMap;
     roaring::Roaring64Map indexRegionCoversBitMap;
-    std::multiset<KeyCoverPair, CompareKeyCoverPair> keysToRegionCover;
+    std::map<uint64_t, std::unique_ptr<roaring::Roaring>> s2CellsToKeys;
+    std::vector<std::string> keys;
 };
 
 #endif // ROARING_GEO_MAP_WRITER_H

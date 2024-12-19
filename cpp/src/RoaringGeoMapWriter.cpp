@@ -23,7 +23,17 @@ bool RoaringGeoMapWriter::write(const S2CellUnion &region, const std::string &ke
     roaring::Roaring64Map regionCoverBitMap;
     regionCoverBitMap.addMany(region.size(), reinterpret_cast<const uint64_t*>(region.data()));
 
-    keysToRegionCover.insert({key, std::move(regionCoverBitMap)});
+    auto keyId = keys.size();
+    keys.emplace_back(key);
+    for (auto cellId : *normalizedRegion){
+        if (s2CellsToKeys.contains(cellId.id())) {
+            s2CellsToKeys[cellId.id()]->add(keyId);
+        } else {
+           auto bitmap =  std::make_unique<roaring::Roaring>();
+           bitmap->add(keyId);
+           s2CellsToKeys[cellId.id()] = std::move(bitmap);
+        }
+    }
     return true;
 }
 
@@ -54,17 +64,6 @@ void reserve_header(FileWriteBuffer *f) {
 
 bool RoaringGeoMapWriter::build(std::string filePath) {
 
-    // 2. Iterate through the keys -> cells build up the map of cells ids -> key_ids. The key_id of a
-    // key is the uint32 index of the value when sorted in the keysToRegionCover vector. In theory, key_ids
-    // with near key_id values should represent data that is close spatially.
-    auto cellToKeyMap = std::make_unique<CellKeyIdsMap>();
-    uint32_t index = 0;
-    for (auto keyToCover = keysToRegionCover.begin(); keyToCover != keysToRegionCover.end(); ++keyToCover, ++index) {
-        auto regionCover = (*keyToCover).second;
-        // Note, the index is now the uint32 id of the key
-        auto args = IterateArgs{index ,cellToKeyMap.get()};
-        regionCover.iterate(add_key_id, static_cast<void*>(&args));
-    }
 
     Header header(levelIndexBucketRange, BLOCK_SIZE);
     // 3. Create the file and reserve the header space by write space of header as 0'd out memory.
@@ -81,8 +80,7 @@ bool RoaringGeoMapWriter::build(std::string filePath) {
 
     // 6. Write the key_id column to the roaring geomap, the keys position in the key_id column serves as it's index.
     ByteColumnWriter keyColumn(BLOCK_SIZE);
-    for (auto keyToCover = keysToRegionCover.begin(); keyToCover != keysToRegionCover.end(); ++keyToCover) {
-        const std::string& key = (*keyToCover).first;
+    for (auto key: keys) {
         keyColumn.addBytes(std::vector<char>(key.begin(), key.end()));
     }
     // There is no index for the key's as they are indexed by their relative position in the column and thus the block
@@ -90,12 +88,12 @@ bool RoaringGeoMapWriter::build(std::string filePath) {
     uint64_t keyIndexOffset = f->offset();
     uint64_t keyIndexSize = keyColumn.writeToFile(*f);
     header.setKeyIndexOffset(keyIndexOffset, keyIndexSize);
-    header.setKeyIndexEntries(keysToRegionCover.size());
+    header.setKeyIndexEntries(keys.size());
 
     // Write the CellId to Key_Id section
     CellIdColumnWriter cellIdColumn(BLOCK_SIZE);
     RoaringBitmapColumnWriter bitmapColumn(BLOCK_SIZE);
-    for (const auto& [cellId, keyIdBitmap] : *cellToKeyMap) {
+    for (const auto& [cellId, keyIdBitmap] : s2CellsToKeys) {
         cellIdColumn.addValue(cellId);
         bitmapColumn.addBitmap(&(*keyIdBitmap)); // TODO: compression ?
     }
@@ -103,7 +101,7 @@ bool RoaringGeoMapWriter::build(std::string filePath) {
     uint64_t offset = f->offset();
     uint64_t cellIndexSize = cellIdColumn.writeToFile(*f);
     header.setCellIndexOffset(offset, cellIndexSize);
-    header.setCellIndexEntries(cellToKeyMap->size());
+    header.setCellIndexEntries(s2CellsToKeys.size());
 
     offset = f->offset();
     uint64_t bitmapSize = bitmapColumn.writeToFile(*f);

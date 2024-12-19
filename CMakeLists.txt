@@ -52,8 +52,6 @@ add_library(RoaringGeoMapsLib STATIC
         cpp/src/BlockIndexWriter.cpp
         cpp/src/BlockIndexWriter.h
         cpp/src/Block.h
-        cpp/src/Block.cpp
-        cpp/src/Block.cpp
         cpp/benchmarks/main.cpp
         cpp/src/S2BlockIndexReader.cpp)
 
