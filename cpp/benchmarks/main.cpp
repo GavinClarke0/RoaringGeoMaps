@@ -138,7 +138,7 @@ int main() {
 
 
             auto start_query = std::chrono::high_resolution_clock::now();
-            benchmarkQueryExecution(reader, 1000, indexedCellIds);
+            benchmarkQueryExecution(reader, 10000, indexedCellIds);
             auto end_query = std::chrono::high_resolution_clock::now();
             auto query_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_query - start_query).count();
             std::cout << "Query benchmark completed in " << query_duration << " ms.\n";

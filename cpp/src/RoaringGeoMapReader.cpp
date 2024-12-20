@@ -89,25 +89,16 @@ roaring::Roaring RoaringGeoMapReader::queryBlockValues(uint32_t &blockId, std::v
     auto indexes = cellIdBlock.queryValueIndexes(values);
     auto indexRanges = cellIdBlock.queryValueRangesIndexes(ranges);
 
-    // TODO: improve the below code to use fast union. AN example is available below:
-    //    std::vector<roaring::Roaring> indexKeyIds;
-    //    roaring::Roaring keyIds;
-    //    indexKeyIds = keyIdBlock.readIndexRanges(indexRanges);
-    //    roaring::Roaring::fastunion(indexKeyIds.size(), indexKeyIds.data());
-    //    indexKeyIds = keyIdBlock.readIndexes(indexes);
-    //    keyIds.fastunion(indexKeyIds.size(), indexKeyIds.data());
+    std::vector<const roaring::Roaring*> keyIds;
+    auto rangeBitmaps = keyIdBlock.readIndexRanges(indexRanges);
+    auto indexBitmaps = keyIdBlock.readIndexes(indexes);
+    keyIds.reserve(rangeBitmaps.size() + indexBitmaps.size());
+    for (const auto& bitmap: rangeBitmaps)
+        keyIds.emplace_back(bitmap.get());
+    for (const auto& bitmap: indexBitmaps)
+        keyIds.emplace_back(bitmap.get());
 
-    roaring::Roaring keyIds;
-    for (const auto& bitmap: keyIdBlock.readIndexes(indexes)){
-        keyIds |= bitmap;
-    }
-
-    auto keyIndexes = keyIdBlock.readIndexes(indexes);
-    for (const auto& bitmap:  keyIdBlock.readIndexRanges(indexRanges)){
-        keyIds |= bitmap;
-    }
-
-    return keyIds;
+    return roaring::Roaring::fastunion(keyIds.size(), keyIds.data());
 }
 
 std::vector<BlockValues<uint32_t>> RoaringGeoMapReader::queryBlocksByIndexes(roaring::Roaring& queryValues) {
