@@ -106,38 +106,43 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    int numCircles = 100000;
-    double radius_meters = 10; // 10m radius
+    auto circleCountTestCases = {5000, 10000, 50000};
+    auto radiusMetersTestCases = {5, 10, 100, 1000};
 
-    // Vector to store indexed cellIds
-    std::vector<std::vector<S2CellId>> indexedCellIds;
+    for (auto circleCount : circleCountTestCases) {
+        for (auto radiusMeters: radiusMetersTestCases) {
+            // Vector to store indexed cellIds
+            std::vector<std::vector<S2CellId>> indexedCellIds;
 
-    // Benchmark writing circles
-    auto start_write = std::chrono::high_resolution_clock::now();
-    benchmarkWriteCircles(writer, numCircles, radius_meters, indexedCellIds);
-    auto end_write = std::chrono::high_resolution_clock::now();
-    auto write_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_write - start_write).count();
-    std::cout << "Write benchmark completed in " << write_duration << " ms.\n";
+            std::cout << "Bench Mark: [Circles: " << circleCount << "] [Radius: " << radiusMeters << "m]\n\n";
 
-    auto start_build = std::chrono::high_resolution_clock::now();
-    writer.build(fileName);
-    auto end_build= std::chrono::high_resolution_clock::now();
-    auto build_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_build - start_build).count();
-    std::cout << "Build benchmark completed in " << build_duration << " ms.\n";
+            // Benchmark writing circles
+            auto start_write = std::chrono::high_resolution_clock::now();
+            benchmarkWriteCircles(writer, circleCount, radiusMeters, indexedCellIds);
+            auto end_write = std::chrono::high_resolution_clock::now();
+            auto write_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_write - start_write).count();
+            std::cout << "Write benchmark completed in " << write_duration << " ms.\n";
 
-    // Benchmark querying the index with circles
-    auto start_init = std::chrono::high_resolution_clock::now();
-    RoaringGeoMapReader reader(fileName);
-    auto end_init = std::chrono::high_resolution_clock::now();
-    auto init_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_init - start_init).count();
-    std::cout << "Init benchmark completed in " << init_duration << " ms.\n";
+            auto start_build = std::chrono::high_resolution_clock::now();
+            writer.build(fileName);
+            auto end_build= std::chrono::high_resolution_clock::now();
+            auto build_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_build - start_build).count();
+            std::cout << "Build benchmark completed in " << build_duration << " ms.\n";
+
+            // Benchmark querying the index with circles
+            auto start_init = std::chrono::high_resolution_clock::now();
+            RoaringGeoMapReader reader(fileName);
+            auto end_init = std::chrono::high_resolution_clock::now();
+            auto init_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_init - start_init).count();
+            std::cout << "Init benchmark completed in " << init_duration << " ms.\n";
 
 
-    auto start_query = std::chrono::high_resolution_clock::now();
-    benchmarkQueryExecution(reader, 20000, indexedCellIds);
-    auto end_query = std::chrono::high_resolution_clock::now();
-    auto query_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_query - start_query).count();
-    std::cout << "Query benchmark completed in " << query_duration << " ms.\n";
-
+            auto start_query = std::chrono::high_resolution_clock::now();
+            benchmarkQueryExecution(reader, 1000, indexedCellIds);
+            auto end_query = std::chrono::high_resolution_clock::now();
+            auto query_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_query - start_query).count();
+            std::cout << "Query benchmark completed in " << query_duration << " ms.\n";
+        }
+    }
     return 0;
 }
