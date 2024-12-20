@@ -42,7 +42,7 @@ S2Cap generateRandomCircle(double radius_meters) {
 // Function to generate cellIds for a circle
 std::vector<S2CellId> coverCircleWithCells(S2Cap& circle) {
     S2RegionCoverer::Options options;
-    options.set_max_cells(15);  // Limit the number of cells in the cover
+    options.set_max_cells(30);  // Limit the number of cells in the cover
     S2RegionCoverer coverer(options);
 
     std::vector<S2CellId> covering;
@@ -51,17 +51,53 @@ std::vector<S2CellId> coverCircleWithCells(S2Cap& circle) {
 }
 
 // Function to benchmark writing circles to the index
-void benchmarkWriteCircles(RoaringGeoMapWriter& writer, int numCircles, double radius_meters, std::vector<std::vector<S2CellId>>& indexedCellIds) {
+std::vector<std::vector<S2CellId>> generateTestCircles(int numCircles, double radius_meters) {
+    std::vector<std::vector<S2CellId>> indexedCellIds;
     for (int i = 0; i < numCircles; ++i) {
         S2Cap circle = generateRandomCircle(radius_meters);
         std::vector<S2CellId> covering = coverCircleWithCells(circle);
         S2CellUnion cellUnion;
         cellUnion.Init(covering);
-        writer.write(cellUnion, std::to_string(i));
 
         // Store the indexed cellIds for future queries
         indexedCellIds.push_back(covering);
     }
+    return indexedCellIds;
+}
+
+// Function to benchmark querying the index with circles
+void benchmarkWrite(RoaringGeoMapWriter& writer, const std::vector<std::vector<S2CellId>>& indexedCellIds) {
+    // Store query execution times
+    std::vector<long long> execution_times;
+
+    for (int i = 0; i < indexedCellIds.size(); ++i) {
+        // Select a circle randomly from the indexed circles
+        const auto& covering = indexedCellIds[i]; // Ensure we query an indexed circle
+        S2CellUnion cellUnion;
+        cellUnion.Init(covering);
+
+        // Measure the query execution time
+        auto start_time = std::chrono::high_resolution_clock::now();
+        writer.write(cellUnion, "circle-" + std::to_string(i));
+        auto end_time = std::chrono::high_resolution_clock::now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+        execution_times.push_back(duration);
+    }
+
+    // Compute mean and p99
+    long long sum = 0;
+    for (const auto& time : execution_times) {
+        sum += time;
+    }
+    double mean = static_cast<double>(sum) / execution_times.size();
+
+    // Sort to calculate p99
+    std::sort(execution_times.begin(), execution_times.end());
+    double p99 = execution_times[static_cast<int>(execution_times.size() * 0.99)];
+
+    std::cout << "Mean write execution time: " << mean << " microseconds\n";
+    std::cout << "99th percentile (p99) write execution time: " << p99 << " microseconds\n";
 }
 
 // Function to benchmark querying the index with circles
@@ -112,13 +148,14 @@ int main() {
     for (auto circleCount : circleCountTestCases) {
         for (auto radiusMeters: radiusMetersTestCases) {
             // Vector to store indexed cellIds
-            std::vector<std::vector<S2CellId>> indexedCellIds;
+            auto indexedCellIds = generateTestCircles(circleCount, radiusMeters);
 
-            std::cout << "Bench Mark: [Circles: " << circleCount << "] [Radius: " << radiusMeters << "m]\n\n";
+            std::cout << "\nBench Mark: [Circles: " << circleCount << "] [Radius: " << radiusMeters << "m]\n";
+            std::cout << "----------------------------------------------------------\n";
 
             // Benchmark writing circles
             auto start_write = std::chrono::high_resolution_clock::now();
-            benchmarkWriteCircles(writer, circleCount, radiusMeters, indexedCellIds);
+            benchmarkWrite(writer, indexedCellIds);
             auto end_write = std::chrono::high_resolution_clock::now();
             auto write_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_write - start_write).count();
             std::cout << "Write benchmark completed in " << write_duration << " ms.\n";
@@ -135,7 +172,6 @@ int main() {
             auto end_init = std::chrono::high_resolution_clock::now();
             auto init_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_init - start_init).count();
             std::cout << "Init benchmark completed in " << init_duration << " ms.\n";
-
 
             auto start_query = std::chrono::high_resolution_clock::now();
             benchmarkQueryExecution(reader, 10000, indexedCellIds);
