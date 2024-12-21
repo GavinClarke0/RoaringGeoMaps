@@ -4,7 +4,7 @@ set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 
 project(RoaringGeoMaps VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-O3")
+#set(CMAKE_CXX_FLAGS "-O3")
 set(GOOGLETEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/googletest)
 set(GOOGLETEST_VERSION 1.15.2)
 set(ABSL_ENABLE_INSTALL ON)
@@ -18,10 +18,12 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/abseil-cpp EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/s2geometry EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/CRoaring EXCLUDE_FROM_ALL)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/SuRF EXCLUDE_FROM_ALL)
 
 include_directories(cpp/vendor/s2geometry/src)
 include_directories(cpp/vendor/CRoaring/cpp)
 include_directories(cpp/vendor/CRoaring/include)
+include_directories(cpp/vendor/SuRF/include)
 
 # Add the new source files to the library
 add_library(RoaringGeoMapsLib STATIC 
@@ -55,7 +57,7 @@ add_library(RoaringGeoMapsLib STATIC
         cpp/src/Block.cpp
         cpp/src/Block.cpp
         cpp/benchmarks/main.cpp
-        cpp/src/S2BlockIndexReader.cpp)
+        cpp/src/S2BlockIndexReader.cpp cpp/src/CellFilter.cpp cpp/src/CellFilter.h)
 
 target_link_libraries(
     RoaringGeoMapsLib
@@ -77,7 +79,7 @@ target_link_libraries(
     ${OPENSSL_LIBRARIES}
 )
 
-add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp cpp/src/S2BlockIndexReader.h)
+add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp)
 target_link_libraries(
         RoaringGeoMapsBenchmarks
         RoaringGeoMapsLib

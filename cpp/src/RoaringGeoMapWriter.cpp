@@ -20,13 +20,13 @@ bool RoaringGeoMapWriter::write(const S2CellUnion &region, const std::string &ke
     auto normalizedRegion = std::make_unique<std::vector<S2CellId>>(); // May not need a unique pointer do to the lifetime
     region.Denormalize(MIN_LEVEL, levelIndexBucketRange, normalizedRegion.get());
 
+    filterBuilder.insertMany(region.cell_ids());
+
     roaring::Roaring64Map regionCoverBitMap;
     regionCoverBitMap.addMany(region.size(), reinterpret_cast<const uint64_t*>(region.data()));
-
     keysToRegionCover.insert({key, std::move(regionCoverBitMap)});
     return true;
 }
-
 
 struct IterateArgs {
     uint32_t keyId;
@@ -59,6 +59,7 @@ bool RoaringGeoMapWriter::build(std::string filePath) {
     // with near key_id values should represent data that is close spatially.
     auto cellToKeyMap = std::make_unique<CellKeyIdsMap>();
     uint32_t index = 0;
+
     for (auto keyToCover = keysToRegionCover.begin(); keyToCover != keysToRegionCover.end(); ++keyToCover, ++index) {
         auto regionCover = (*keyToCover).second;
         // Note, the index is now the uint32 id of the key
@@ -66,18 +67,18 @@ bool RoaringGeoMapWriter::build(std::string filePath) {
         regionCover.iterate(add_key_id, static_cast<void*>(&args));
     }
 
+
     Header header(levelIndexBucketRange, BLOCK_SIZE);
     // 3. Create the file and reserve the header space by write space of header as 0'd out memory.
     std::unique_ptr<FileWriteBuffer> f = std::make_unique<FileWriteBuffer>(filePath, 4096 * 4);
     reserve_header(f.get());
 
     // 4. Write the S2 cell hierarchical cover roaring bitmap.
-    auto [coverOffset, coverSize] = f->write([&](char* data) {indexRegionCoversBitMap.writeFrozen(data);}, indexRegionCoversBitMap.getFrozenSizeInBytes());
-    header.setCoverBitmapOffset(coverOffset, coverSize);
+    auto [pos, size] = filterBuilder.build().serialize(*f);
+    header.setCoverBitmapOffset(pos, size);
 
     // 5. Write the S2 cell intersection roaring bitmap 32 byte aligned
-   auto [containsOffset, containsSize] = f->write([&](char* data) {indexRegionContainsBitMap.writeFrozen(data);}, indexRegionContainsBitMap.getFrozenSizeInBytes());
-   header.setContainsBitmapOffset(containsOffset, containsSize);
+   header.setContainsBitmapOffset(0, 0);
 
     // 6. Write the key_id column to the roaring geomap, the keys position in the key_id column serves as it's index.
     ByteColumnWriter keyColumn(BLOCK_SIZE);

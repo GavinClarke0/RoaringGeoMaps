@@ -1,6 +1,7 @@
 #include "RoaringGeoMapReader.h"
 #include "CellIdColumnReader.h"
 #include "s2/s2latlng.h"
+#include "CellFilter.h"
 #include <s2/s2region_coverer.h>
 
 const int MIN_LEVEL = 3;
@@ -11,8 +12,11 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
     // Initialize other members or perform additional setup as needed
     header = Header::readFromFile(*f);
 
-//    auto coverBitmapPos = header.getCoverBitmapOffset();
-//    coversBitmap = roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
+
+
+    auto coverBitmapPos = header.getCoverBitmapOffset();
+    cellFilter = std::make_unique<CellFilter>(CellFilter::deserialize(*f, coverBitmapPos.first, coverBitmapPos.second));
+    //roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
 //
 //    auto containsBitmapPos = header.getContainsBitmapOffset();
 //    containsBitmap = roaring::Roaring64Map::frozenView(f->view(containsBitmapPos.first, containsBitmapPos.second));

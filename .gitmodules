@@ -1,9 +1,6 @@
 [submodule "cpp/vendor/s2geometry"]
 	path = cpp/vendor/s2geometry
 	url = https://github.com/google/s2geometry.git
-[submodule "cpp/vendor/--force"]
-	path = cpp/vendor/--force
-	url = https://github.com/abseil/abseil-cpp.git
 [submodule "cpp/vendor/abseil-cpp"]
 	path = cpp/vendor/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
@@ -13,3 +10,6 @@
 [submodule "cpp/vendor/CRoaring"]
 	path = cpp/vendor/CRoaring
 	url = https://github.com/RoaringBitmap/CRoaring.git
+[submodule "cpp/vendor/SuRF"]
+	path = cpp/vendor/SuRF
+	url = https://github.com/GavinClarke0/SuRF.git

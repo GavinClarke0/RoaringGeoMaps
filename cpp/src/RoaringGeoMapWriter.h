@@ -6,9 +6,10 @@
 #include "s2/s2region.h"
 #include "s2/s2cell_union.h"
 #include "roaring64map.hh"
+#include "CellFilter.h"
 
-
-inline bool compareBitMapMin(std::pair<std::string, roaring::Roaring64Map> a, std::pair<std::string, roaring::Roaring64Map> b) {
+inline bool
+compareBitMapMin(std::pair<std::string, roaring::Roaring64Map> a, std::pair<std::string, roaring::Roaring64Map> b) {
     return a.second.minimum() < b.second.minimum();
 }
 
@@ -17,7 +18,7 @@ using KeyCoverPair = std::pair<std::string, roaring::Roaring64Map>;
 
 
 struct CompareKeyCoverPair {
-    bool operator()(const KeyCoverPair& a, const KeyCoverPair& b) const {
+    bool operator()(const KeyCoverPair &a, const KeyCoverPair &b) const {
         return a.second.minimum() < b.second.minimum();
     }
 };
@@ -29,6 +30,7 @@ class RoaringGeoMapWriter {
 
 public:
     RoaringGeoMapWriter(int levelIndexBucketRange);
+
     // Writes the provided S2Region and a description (up to 512 characters).
     // If the description exceeds 512 characters, the method will return false.
     //
@@ -39,12 +41,13 @@ public:
     // Returns:
     // - true if the region and description were successfully processed,
     //   false if the description exceeds 512 characters.
-    bool write(const S2CellUnion& region, const std::string& key);
+    bool write(const S2CellUnion &region, const std::string &key);
+
     bool build(std::string filePath);
+
 private:
     int levelIndexBucketRange;
-    roaring::Roaring64Map indexRegionContainsBitMap;
-    roaring::Roaring64Map indexRegionCoversBitMap;
+    CellFilter::Builder filterBuilder;
     std::multiset<KeyCoverPair, CompareKeyCoverPair> keysToRegionCover;
 };
 

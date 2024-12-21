@@ -142,8 +142,8 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    auto circleCountTestCases = {5000, 10000, 50000};
-    auto radiusMetersTestCases = {5, 10, 100, 1000};
+    auto circleCountTestCases = {5000};
+    auto radiusMetersTestCases = {100};
 
     for (auto circleCount : circleCountTestCases) {
         for (auto radiusMeters: radiusMetersTestCases) {

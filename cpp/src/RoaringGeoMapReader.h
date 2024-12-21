@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ROARING_GEO_MAP_READER_H
+#define ROARING_GEO_MAP_READER_H
 
 #include <cstdint>
 #include <string>
@@ -11,7 +12,8 @@
 #include "s2/s2cell_union.h"
 #include "ByteColumnReader.h"
 #include "RoaringBitmapColumnReader.h"
-
+#include "surf.hpp"
+#include "CellFilter.h"
 
 class RoaringGeoMapReader {
 
@@ -25,8 +27,7 @@ public:
 private:
     std::unique_ptr<FileReadBuffer> f;
     Header header;
-    roaring::Roaring64Map coversBitmap;
-    roaring::Roaring64Map containsBitmap;
+    std::unique_ptr<CellFilter> cellFilter;
     std::unique_ptr<ByteColumnReader> keyColumn;
     std::unique_ptr<CellIdColumnReader> cellIdColumn;
     std::unique_ptr<RoaringBitmapColumnReader> bitmapColumn;
@@ -36,3 +37,4 @@ private:
     std::vector<BlockValues<uint32_t>> queryBlocksByIndexes(roaring::Roaring& queryValues);
 };
 
+#endif // ROARING_GEO_MAP_READER_H

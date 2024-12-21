@@ -8,7 +8,6 @@
 #include "io/FileReadBuffer.h"
 #include "unordered_set"
 #include "VectorView.h"
-#include "s2/s2cell_id.h"
 #include <vector>
 #include <iostream>
 #include <algorithm>
