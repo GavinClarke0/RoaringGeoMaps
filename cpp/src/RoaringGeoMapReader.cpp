@@ -1,7 +1,6 @@
 #include "RoaringGeoMapReader.h"
 #include "CellIdColumnReader.h"
 #include "s2/s2latlng.h"
-#include "CellFilter.h"
 #include <s2/s2region_coverer.h>
 
 const int MIN_LEVEL = 3;
@@ -12,10 +11,9 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
     // Initialize other members or perform additional setup as needed
     header = Header::readFromFile(*f);
 
-
-
     auto coverBitmapPos = header.getCoverBitmapOffset();
-    cellFilter = std::make_unique<CellFilter>(CellFilter::deserialize(*f, coverBitmapPos.first, coverBitmapPos.second));
+    cellFilter = CellFilter::deserialize(*f, coverBitmapPos.first, coverBitmapPos.second);
+
     //roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
 //
 //    auto containsBitmapPos = header.getContainsBitmapOffset();
@@ -32,7 +30,7 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
 
 }
 
-RoaringGeoMapReader::~RoaringGeoMapReader()= default;
+RoaringGeoMapReader::~RoaringGeoMapReader() = default;
 
 
 std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion& queryRegionNormalized) {
@@ -43,16 +41,22 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
 
     // Find the ranges of cellIds for each cell in the query region.
     std::vector<std::pair<uint64_t, uint64_t>> cellRanges;
+
     for (auto cellId : queryRegion) {
+
+        auto min = cellId.range_min().id();
+        auto max = cellId.range_max().id();
+        if (cellFilter.containsRange(min, max))
+            cellRanges.emplace_back(min, max);
         // Insert the range of CellIds that contains the child cells of each cell in the query region.
-        cellRanges.emplace_back(std::pair<uint64_t, uint64_t>(cellId.range_min().id(), cellId.range_max().id()));
     }
 
     // FInd the ancestor cells of each cell in the query region.
     std::set<uint64_t> cellAncestors;
     for (auto cellId : queryRegion) {
         for (int i = cellId.level()-header.getLevelIndexBucketRange(); i >= MIN_LEVEL; i -= header.getLevelIndexBucketRange() ) {
-            cellAncestors.insert(cellId.parent(i).id());
+            if (cellFilter.contains(cellId.parent(i).id()))
+                cellAncestors.insert(cellId.parent(i).id());
         }
     }
 

@@ -1,4 +1,5 @@
 #include <S2BlockIndexReader.h>
+#include <cassert>
 
 S2BlockIndexReader::S2BlockIndexReader(FileReadBuffer& f, uint64_t pos, uint64_t size): values(f, pos, size) {}
 

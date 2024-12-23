@@ -1,3 +1,6 @@
+#ifndef ROARINGGEOMAPS_CELLIDCOLUMNWRITER_H
+#define ROARINGGEOMAPS_CELLIDCOLUMNWRITER_H
+
 #include <vector>
 #include <cstdint>
 #include "io/FileWriteBuffer.h"
@@ -25,3 +28,5 @@ private:
     Uint64BlockWriter currentWriteBlock;
     std::vector<Uint64BlockWriter> blocks;
 };
+
+#endif //ROARINGGEOMAPS_CELLIDCOLUMNWRITER_H

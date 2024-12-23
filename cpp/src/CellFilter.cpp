@@ -1,8 +1,15 @@
 #include "CellFilter.h"
-#include "s2/s2cell_union.h"
+#include "surf.hpp"
 
-CellFilter::CellFilter(std::vector<std::string> values):
-filter(std::make_unique<surf::SuRF>(values)) {
+CellFilter::CellFilter(const std::vector<std::string>& values):filter(new surf::SuRF(values)) {}
+
+CellFilter::CellFilter() = default;
+
+CellFilter::CellFilter(surf::SuRF* filter): filter(filter) {}
+
+CellFilter::~CellFilter() {
+   //	filter_->destroy();
+   //	delete filter_;
 }
 
 //void CellFilter::Builder::insert(S2CellId& value) {
@@ -10,21 +17,28 @@ filter(std::make_unique<surf::SuRF>(values)) {
 //}
 
 CellFilter CellFilter::Builder::build() {
-    return CellFilter(std::move(values));
+    return CellFilter( std::vector<std::string>(values.begin(), values.end()));
 }
 
-void CellFilter::Builder::insertMany(const S2CellUnion&  insertValues) {
-    std::transform(insertValues.begin(), insertValues.end(), std::back_inserter(values), [](S2CellId value) {
-        return surf::uint64ToString(value.id());
-    });
+void CellFilter::Builder::insertMany( const std::vector<S2CellId>&  insertValues) {
+    for (auto cellId: insertValues) {
+        values.insert( surf::uint64ToString(cellId.id()));
+    }
 }
 
 std::pair<uint64_t, uint64_t>  CellFilter::serialize(FileWriteBuffer& f) {
     return f.write(filter->serialize(), filter->serializedSize());
 }
 
-CellFilter::CellFilter(std::unique_ptr<surf::SuRF> filter): filter(std::move(filter)) {}
-
 CellFilter CellFilter::deserialize(FileReadBuffer& f, uint64_t pos, uint64_t size) {
-    return CellFilter(std::unique_ptr<surf::SuRF>(surf::SuRF::deSerialize(const_cast<char*>(f.view(pos, size)))));
+    auto filter =  CellFilter(surf::SuRF::deSerialize(const_cast<char*>(f.view(pos, size))));
+    return filter;
+}
+
+bool CellFilter::contains(uint64_t cellId) {
+    return filter->lookupKey(surf::uint64ToString(cellId));
+}
+
+bool CellFilter::containsRange(uint64_t minCellId, uint64_t maxCellId) {
+    return filter->lookupRange(surf::uint64ToString(minCellId), true, surf::uint64ToString(maxCellId), true);
 }
