@@ -1,7 +1,9 @@
 #include "CellFilter.h"
 #include "surf.hpp"
 
-CellFilter::CellFilter(const std::vector<std::string>& values):filter(new surf::SuRF(values)) {}
+CellFilter::CellFilter(const std::vector<std::string>& values)
+:filter(new surf::SuRF(values, true, 16, surf::SuffixType::kNone, 0, 0))
+{}
 
 CellFilter::CellFilter() = default;
 
@@ -39,6 +41,18 @@ bool CellFilter::contains(uint64_t cellId) {
     return filter->lookupKey(surf::uint64ToString(cellId));
 }
 
-bool CellFilter::containsRange(uint64_t minCellId, uint64_t maxCellId) {
-    return filter->lookupRange(surf::uint64ToString(minCellId), true, surf::uint64ToString(maxCellId), true);
+std::tuple<uint64_t, uint64_t, bool> CellFilter::containsRange(uint64_t minCellId, uint64_t maxCellId) {
+    auto min = filter->moveToKeyGreaterThan(surf::uint64ToString(minCellId), true);
+    auto max = filter->moveToKeyLessThan(surf::uint64ToString(maxCellId), true);
+
+    auto minVal = surf::stringToUint64(min.getKey());
+    auto maxVal = surf::stringToUint64(max.getKey());
+    // If max is greater thqn min then the value is not present in the filter
+    if (minVal < maxVal) {
+        return {minVal, maxVal, true};
+    }
+//    if (min.isValid() && max.isValid())
+//        return {minVal, maxVal, true};
+
+    return {0, 0, false};
 }

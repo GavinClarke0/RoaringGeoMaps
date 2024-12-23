@@ -40,14 +40,13 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
     queryRegionNormalized.Denormalize(MIN_LEVEL, header.getLevelIndexBucketRange(), &queryRegion);
 
     // Find the ranges of cellIds for each cell in the query region.
-    std::vector<std::pair<uint64_t, uint64_t>> cellRanges;
-
+    std::set<std::pair<uint64_t, uint64_t>> cellRanges;
     for (auto cellId : queryRegion) {
-
         auto min = cellId.range_min().id();
         auto max = cellId.range_max().id();
-        if (cellFilter.containsRange(min, max))
-            cellRanges.emplace_back(min, max);
+        auto result = (cellFilter.containsRange(min, max));
+        if (std::get<2>(result))
+            cellRanges.insert({std::get<0>(result), std::get<1>(result)});
         // Insert the range of CellIds that contains the child cells of each cell in the query region.
     }
 
@@ -60,6 +59,9 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
         }
     }
 
+//    if (!std::is_sorted(cellRanges.begin(), cellRanges.end())){
+//        auto x = 10;
+//    }
     auto cellIdBlockIndex= cellIdColumn->BlockIndex();
     auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellRanges, cellAncestors);
     roaring::Roaring resultKeyIds;

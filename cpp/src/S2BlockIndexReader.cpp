@@ -3,15 +3,15 @@
 
 S2BlockIndexReader::S2BlockIndexReader(FileReadBuffer& f, uint64_t pos, uint64_t size): values(f, pos, size) {}
 
-std::vector<S2BlockValues<uint64_t>> S2BlockIndexReader::QueryValuesBlocks(std::vector<std::pair<uint64_t, uint64_t>>& cellRanges, std::set<uint64_t>& cellValues) {
+std::vector<S2BlockValues<uint64_t>> S2BlockIndexReader::QueryValuesBlocks(std::set<std::pair<uint64_t, uint64_t>>& cellRanges, std::set<uint64_t>& cellValues) {
 
     // This function assumes that cellValues is not over lapping with cell ranges. We make this assumption because this
     // function is only ever called with values derived from s2 region covers and the ancestors of any cell in the s2
     // region cover cannot overlap in CellID value with the children cell ranges of any other cell in the region cover.
 
     // Ensure the query ranges and cell values are sorted.
-    assert(std::is_sorted(cellRanges.begin(), cellRanges.end()) && "query ranges must be sorted");
-    assert(std::is_sorted(cellValues.begin(), cellValues.end()) && "query values must be sorted");
+//    assert(std::is_sorted(cellRanges.begin(), cellRanges.end()) && "query ranges must be sorted");
+//    assert(std::is_sorted(cellValues.begin(), cellValues.end()) && "query values must be sorted");
 
     std::vector<S2BlockValues<uint64_t>> results;
 

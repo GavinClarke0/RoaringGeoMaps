@@ -55,7 +55,7 @@ inline std::optional<uint32_t> findBlockValue(VectorView<uint64_t>& sortedValues
 class S2BlockIndexReader {
 public:
     S2BlockIndexReader(FileReadBuffer& f, uint64_t pos, uint64_t size);
-    std::vector<S2BlockValues<uint64_t>>  QueryValuesBlocks(std::vector<std::pair<uint64_t, uint64_t>>& ranges, std::set<uint64_t>& values);
+    std::vector<S2BlockValues<uint64_t>>  QueryValuesBlocks(std::set<std::pair<uint64_t, uint64_t>>& ranges, std::set<uint64_t>& values);
     uint64_t sizeOf() {return sizeof(uint64_t) * values.size();};
 private:
     VectorView<uint64_t> values;

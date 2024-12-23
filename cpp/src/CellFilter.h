@@ -39,7 +39,7 @@ public:
     static CellFilter deserialize(FileReadBuffer& f, uint64_t pos, uint64_t size);
 
     bool contains(uint64_t cellId);
-    bool containsRange(uint64_t minCellId, uint64_t maxCellId);
+    std::tuple<uint64_t, uint64_t, bool> containsRange(uint64_t minCellId, uint64_t maxCellId);
 };
 
 #endif //ROARINGGEOMAPS_CELLFILTER_H
