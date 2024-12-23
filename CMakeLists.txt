@@ -22,21 +22,17 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cpp/vendor/CRoaring EXCLUDE_FROM_AL
 include_directories(cpp/vendor/s2geometry/src)
 include_directories(cpp/vendor/CRoaring/cpp)
 include_directories(cpp/vendor/CRoaring/include)
+include_directories(cpp/vendor/SuRF/include)
 
 # Add the new source files to the library
-add_library(RoaringGeoMapsLib STATIC 
+add_library(RoaringGeoMapsLib STATIC
         cpp/src/RoaringGeoMapWriter.cpp
-        cpp/src/RoaringGeoMapWriter.h
         cpp/src/RoaringGeoMapReader.cpp
         cpp/src/ByteColumnWriter.cpp
-        cpp/src/ByteColumnWriter.h
         cpp/src/RoaringBitmapColumnWriter.cpp
         cpp/src/CellIdColumnWriter.cpp
-        cpp/src/CellIdColumnWriter.h
         cpp/src/Header.cpp
-        cpp/src/Header.h
         cpp/src/io/FileWriteBuffer.cpp
-        cpp/src/io/FileWriteBuffer.h
         cpp/src/io/FileReadBuffer.cpp
         cpp/src/io/FileReadBuffer.h
         cpp/src/ReaderHelpers.h
@@ -55,7 +51,9 @@ add_library(RoaringGeoMapsLib STATIC
         cpp/src/Block.cpp
         cpp/src/Block.cpp
         cpp/benchmarks/main.cpp
-        cpp/src/S2BlockIndexReader.cpp)
+        cpp/src/S2BlockIndexReader.cpp
+        cpp/src/CellFilter.h
+        cpp/src/CellFilter.cpp)
 
 target_link_libraries(
     RoaringGeoMapsLib
@@ -77,13 +75,13 @@ target_link_libraries(
     ${OPENSSL_LIBRARIES}
 )
 
-add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp cpp/src/S2BlockIndexReader.h)
+add_executable(RoaringGeoMapsBenchmarks cpp/benchmarks/main.cpp)
 target_link_libraries(
-        RoaringGeoMapsBenchmarks
-        RoaringGeoMapsLib
-        roaring
-        s2
-        ${OPENSSL_LIBRARIES}
+    RoaringGeoMapsBenchmarks
+    RoaringGeoMapsLib
+    roaring
+    s2
+    ${OPENSSL_LIBRARIES}
 )
 
 

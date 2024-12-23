@@ -8,8 +8,6 @@
 #include "io/FileReadBuffer.h"
 #include "endian/endian.h"
 
-
-
 // Helper function to read a little-endian uint16 from a FileReadBuffer
 inline uint8_t readLittleEndianUint8(const FileReadBuffer& buffer, uint64_t offset) {
     if (offset + 1 > buffer.size()) {

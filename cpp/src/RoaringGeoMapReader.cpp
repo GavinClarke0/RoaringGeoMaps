@@ -11,8 +11,10 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
     // Initialize other members or perform additional setup as needed
     header = Header::readFromFile(*f);
 
-//    auto coverBitmapPos = header.getCoverBitmapOffset();
-//    coversBitmap = roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
+    auto coverBitmapPos = header.getCoverBitmapOffset();
+    cellFilter = CellFilter::deserialize(*f, coverBitmapPos.first, coverBitmapPos.second);
+
+    //roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
 //
 //    auto containsBitmapPos = header.getContainsBitmapOffset();
 //    containsBitmap = roaring::Roaring64Map::frozenView(f->view(containsBitmapPos.first, containsBitmapPos.second));
@@ -28,7 +30,7 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
 
 }
 
-RoaringGeoMapReader::~RoaringGeoMapReader()= default;
+RoaringGeoMapReader::~RoaringGeoMapReader() = default;
 
 
 std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion& queryRegionNormalized) {
@@ -38,20 +40,28 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
     queryRegionNormalized.Denormalize(MIN_LEVEL, header.getLevelIndexBucketRange(), &queryRegion);
 
     // Find the ranges of cellIds for each cell in the query region.
-    std::vector<std::pair<uint64_t, uint64_t>> cellRanges;
+    std::set<std::pair<uint64_t, uint64_t>> cellRanges;
     for (auto cellId : queryRegion) {
+        auto min = cellId.range_min().id();
+        auto max = cellId.range_max().id();
+        auto result = (cellFilter.containsRange(min, max));
+        if (std::get<2>(result))
+            cellRanges.insert({std::get<0>(result), std::get<1>(result)});
         // Insert the range of CellIds that contains the child cells of each cell in the query region.
-        cellRanges.emplace_back(std::pair<uint64_t, uint64_t>(cellId.range_min().id(), cellId.range_max().id()));
     }
 
     // FInd the ancestor cells of each cell in the query region.
     std::set<uint64_t> cellAncestors;
     for (auto cellId : queryRegion) {
         for (int i = cellId.level()-header.getLevelIndexBucketRange(); i >= MIN_LEVEL; i -= header.getLevelIndexBucketRange() ) {
-            cellAncestors.insert(cellId.parent(i).id());
+            if (cellFilter.contains(cellId.parent(i).id()))
+                cellAncestors.insert(cellId.parent(i).id());
         }
     }
 
+//    if (!std::is_sorted(cellRanges.begin(), cellRanges.end())){
+//        auto x = 10;
+//    }
     auto cellIdBlockIndex= cellIdColumn->BlockIndex();
     auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellRanges, cellAncestors);
     roaring::Roaring resultKeyIds;
