@@ -14,12 +14,12 @@ compareBitMapMin(std::pair<std::string, roaring::Roaring64Map> a, std::pair<std:
 }
 
 using CellKeyIdsMap = std::map<uint64_t, std::unique_ptr<roaring::Roaring>>;
-using KeyCoverPair = std::pair<std::string, roaring::Roaring64Map>;
+using KeyCoverPair = std::pair<std::string, std::set<uint64_t>>;
 
 
 struct CompareKeyCoverPair {
     bool operator()(const KeyCoverPair &a, const KeyCoverPair &b) const {
-        return a.second.minimum() < b.second.minimum();
+        return *a.second.begin() < *b.second.begin();
     }
 };
 
@@ -43,11 +43,12 @@ public:
     //   false if the description exceeds 512 characters.
     bool write(const S2CellUnion &region, const std::string &key);
 
-    bool build(std::string filePath);
+    bool build(const std::string& filePath);
 
 private:
     int levelIndexBucketRange;
     CellFilter::Builder filterBuilder;
+    // TODO: We can use a regular hash set and then use a value to store the minimum value for sorting.
     std::multiset<KeyCoverPair, CompareKeyCoverPair> keysToRegionCover;
 };
 

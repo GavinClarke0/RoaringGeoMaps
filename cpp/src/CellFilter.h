@@ -27,7 +27,7 @@ public:
     // Builder class to construct the CellFilter object
     class Builder {
     private:
-        std::set<std::string> values;
+        std::vector<std::string> values;
     public:
         //void insert(S2CellId& value);
         CellFilter build();

@@ -11,7 +11,7 @@ RoaringGeoMapReader::RoaringGeoMapReader(const std::string& filePath) {
     // Initialize other members or perform additional setup as needed
     header = Header::readFromFile(*f);
 
-    auto coverBitmapPos = header.getCoverBitmapOffset();
+    auto coverBitmapPos = header.getCellIdFilterOffset();
     cellFilter = CellFilter::deserialize(*f, coverBitmapPos.first, coverBitmapPos.second);
 
     //roaring::Roaring64Map::frozenView(f->view(coverBitmapPos.first, coverBitmapPos.second));
@@ -59,18 +59,22 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
         }
     }
 
-//    if (!std::is_sorted(cellRanges.begin(), cellRanges.end())){
-//        auto x = 10;
-//    }
     auto cellIdBlockIndex= cellIdColumn->BlockIndex();
     auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellRanges, cellAncestors);
-    roaring::Roaring resultKeyIds;
 
+    std::vector<std::unique_ptr<roaring::Roaring>> keyIds;
+    keyIds.reserve(blocksValues.size());
     for (auto blockValue: blocksValues) {
-        // Collect the total set of key ids found in all blocks;
-        resultKeyIds |= queryBlockValues(blockValue.blockId, blockValue.ranges, blockValue.values);
+        keyIds.emplace_back(queryBlockValues(blockValue.blockId, blockValue.ranges, blockValue.values));
     }
 
+    std::vector<const roaring::Roaring*> keyIdsPtrs;
+    keyIdsPtrs.reserve(keyIds.size());
+    for (const auto& keyId: keyIds) {
+        keyIdsPtrs.emplace_back(keyId.get());
+    }
+
+    auto resultKeyIds = roaring::Roaring::fastunion(keyIdsPtrs.size(), keyIdsPtrs.data());
     auto keyBlockValues = queryBlocksByIndexes(resultKeyIds);
     std::vector<std::vector<char>> results;
     for (const auto& blockValue: keyBlockValues) {
@@ -87,7 +91,7 @@ std::vector<std::vector<char>> RoaringGeoMapReader::Intersects(const S2CellUnion
 }
 
 
-roaring::Roaring RoaringGeoMapReader::queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &ranges, std::vector<uint64_t> &values)  {
+std::unique_ptr<roaring::Roaring> RoaringGeoMapReader::queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &ranges, std::vector<uint64_t> &values)  {
     // CellId and KeyId (RoaringBitMap columns are aligned. Cell Ids found at index x in the cell block's correspond
     // to bitmaps of all keyIds present in the cell at the same index.
     auto cellIdBlock = cellIdColumn->ReadBlock(blockId); // TODO should probably cache this
@@ -108,7 +112,7 @@ roaring::Roaring RoaringGeoMapReader::queryBlockValues(uint32_t &blockId, std::v
     for (const auto& bitmap: indexBitmaps)
         keyIds.emplace_back(bitmap.get());
 
-    return roaring::Roaring::fastunion(keyIds.size(), keyIds.data());
+    return  std::make_unique<roaring::Roaring>(std::move(roaring::Roaring::fastunion(keyIds.size(), keyIds.data())));
 }
 
 std::vector<BlockValues<uint32_t>> RoaringGeoMapReader::queryBlocksByIndexes(roaring::Roaring& queryValues) {

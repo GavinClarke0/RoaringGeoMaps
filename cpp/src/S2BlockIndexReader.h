@@ -29,7 +29,6 @@ inline std::optional<std::pair<uint32_t, uint32_t>> findBlockRange(VectorView<ui
     if (lowerIt == sortedValues.end())
         return std::nullopt;
 
-
     auto upperIt = lowerIt;
     while(upperIt != sortedValues.end() && *upperIt <= cellRange.second)
         upperIt++;

@@ -31,8 +31,7 @@ private:
     std::unique_ptr<CellIdColumnReader> cellIdColumn;
     std::unique_ptr<RoaringBitmapColumnReader> bitmapColumn;
 
-    roaring::Roaring queryBlock(uint32_t& blockId, std::vector<uint64_t>& values);
-    roaring::Roaring queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &valueRanges, std::vector<uint64_t> &values);
+    std::unique_ptr<roaring::Roaring> queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &valueRanges, std::vector<uint64_t> &values);
     std::vector<BlockValues<uint32_t>> queryBlocksByIndexes(roaring::Roaring& queryValues);
 };
 
