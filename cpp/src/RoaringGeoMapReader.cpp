@@ -62,12 +62,12 @@ std::vector<std::vector<char>>  RoaringGeoMapReader::Contains(const S2CellUnion&
     auto cellIdBlockIndex= cellIdColumn->BlockIndex();
     auto blocksValues = cellIdBlockIndex.QueryValuesBlocks(cellRanges, cellAncestors);
 
+    // Needed to take ownership of the unique ptr returns by QueryValuesBlocks.
     std::vector<std::unique_ptr<roaring::Roaring>> keyIds;
     keyIds.reserve(blocksValues.size());
     for (auto blockValue: blocksValues) {
         keyIds.emplace_back(queryBlockValues(blockValue.blockId, blockValue.ranges, blockValue.values));
     }
-
     std::vector<const roaring::Roaring*> keyIdsPtrs;
     keyIdsPtrs.reserve(keyIds.size());
     for (const auto& keyId: keyIds) {
