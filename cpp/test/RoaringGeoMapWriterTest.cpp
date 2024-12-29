@@ -240,7 +240,7 @@ TEST(RoaringGeoMapWriterTest, WriteS2RegionCover) {
         pointCellUnion.Init(pointCells);
 
         auto queryResults = reader.Contains(pointCellUnion);
-        ASSERT_TRUE(queryResults.size() > 0) << "Failed to build the RoaringGeoMapWriter file.";
+        ASSERT_TRUE(queryResults.size() > 0) << "Could not find cells data should be on top of.";
     }
     std::remove(testFilePath.c_str());
 }
