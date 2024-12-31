@@ -1,9 +1,8 @@
 package geomap
 
 /*
-#cgo CXXFLAGS: -std=c++20
-#cgo LDFLAGS: -lstdc++ ${SRCDIR}/native/roaringgeomaps.a
-
+#cgo CFLAGS: -g -Wall
+#cgo darwin,arm64 LDFLAGS: -lstdc++ ${SRCDIR}/native/Darwin/arm64/roaringgeomaps.a -ldl -lm
 
 #include <stdlib.h>
 #include "../c/include/roaring_geo_map_writer.h"
@@ -15,9 +14,6 @@ import (
 	"unsafe"
 )
 
-//${SRCDIR}/native/libRoaringGeoMapsCInterface.a ${SRCDIR}/native/libRoaringGeoMapsLib.a ${SRCDIR}/native/libs2.a ${SRCDIR}/native/libroaring.a -lc++ -lm
-
-// RoaringGeoMapWriter wraps the C RoaringGeoMapWriter.
 type RoaringGeoMapWriter struct {
 	writer *C.RoaringGeoMapWriter
 }
