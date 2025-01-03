@@ -16,7 +16,7 @@ void RoaringGeoMapReader_Delete(RoaringGeoMapReader* reader);
 // Perform the "Contains" query
 // The results will be a 2D array of data (serialized into a flat buffer).
 // Returns the size of the results or -1 in case of an error.
-int RoaringGeoMapReader_Contains(RoaringGeoMapReader* reader, const uint64_t* cellIds, uint64_t cellIdsCount, char** resultBuffer, uint64_t* resultSize);
+int RoaringGeoMapReader_Contains(RoaringGeoMapReader* reader, const uint64_t* cellIds, uint64_t cellIdsCount, char** resultBuffer, uint64_t** resultSize, uint64_t* resultsSize);
 
 // Perform the "Intersects" query
 // Similar semantics as Contains.

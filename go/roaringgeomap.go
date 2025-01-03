@@ -11,6 +11,8 @@ package geomap
 import "C"
 import (
 	"errors"
+	"fmt"
+	"github.com/golang/geo/s2"
 	"unsafe"
 )
 
@@ -28,14 +30,16 @@ func NewRoaringGeoMapWriter(levelIndexBucketRange int) (*RoaringGeoMapWriter, er
 }
 
 // Write adds an S2 region and key to the map.
-func (r *RoaringGeoMapWriter) Write(cellUnion []uint64, key string) error {
+func (r *RoaringGeoMapWriter) Write(cellUnion s2.CellUnion, key string) error {
+
+	if !cellUnion.IsValid() {
+		return fmt.Errorf("invalid CellUnion")
+	}
 	cKey := C.CString(key)
 	defer C.free(unsafe.Pointer(cKey))
-
 	// Convert Go slice to C array
 	cCellUnion := (*C.uint64_t)(unsafe.Pointer(&cellUnion[0]))
 	cSize := C.ulonglong(len(cellUnion))
-
 	if C.RoaringGeoMapWriter_Write(r.writer, cCellUnion, cSize, cKey) == C.bool(false) {
 		return errors.New("failed to write S2 region and key")
 	}
@@ -79,37 +83,22 @@ func NewRoaringGeoMapReader(filePath string) (*RoaringGeoMapReader, error) {
 }
 
 // Contains checks if the provided S2CellUnion is fully contained.
-func (r *RoaringGeoMapReader) Contains(cellUnion []uint64) ([][]byte, error) {
+func (r *RoaringGeoMapReader) Contains(cellUnion s2.CellUnion) ([][]byte, error) {
 	cCellUnion := (*C.uint64_t)(unsafe.Pointer(&cellUnion[0]))
 	cSize := C.ulonglong(len(cellUnion))
 
 	var bytesPtr *C.char
+	var bytesSizePtr *C.ulonglong
 	var size C.ulonglong
 
 	// Call the C function directly
-	if C.RoaringGeoMapReader_Contains(r.reader, cCellUnion, cSize, &bytesPtr, &size) == 0 {
+	if res := C.RoaringGeoMapReader_Contains(r.reader, cCellUnion, cSize, &bytesPtr, &bytesSizePtr, &size); res != 0 {
 		return nil, errors.New("failed to query Contains")
 	}
 	defer C.free(unsafe.Pointer(bytesPtr))
+	defer C.free(unsafe.Pointer(bytesSizePtr))
 
-	return cBytesToGo(bytesPtr, size), nil
-}
-
-// Intersects checks if the provided S2CellUnion intersects with the map.
-func (r *RoaringGeoMapReader) Intersects(cellUnion []uint64) ([][]byte, error) {
-	cCellUnion := (*C.uint64_t)(unsafe.Pointer(&cellUnion[0]))
-	cSize := C.ulonglong(len(cellUnion))
-
-	var bytesPtr *C.char
-	var size C.ulonglong
-
-	// Call the C function directly
-	if C.RoaringGeoMapReader_Intersects(r.reader, cCellUnion, cSize, &bytesPtr, &size) == 0 {
-		return nil, errors.New("failed to query Intersects")
-	}
-	defer C.free(unsafe.Pointer(bytesPtr))
-
-	return cBytesToGo(bytesPtr, size), nil
+	return cBytesToGo(bytesPtr, bytesSizePtr, size), nil
 }
 
 // Close cleans up the RoaringGeoMapReader.
@@ -121,9 +110,16 @@ func (r *RoaringGeoMapReader) Close() {
 }
 
 // Helper function to convert raw bytes and size to Go [][]byte.
-func cBytesToGo(bytesPtr *C.char, size C.ulonglong) [][]byte {
-	goBytes := C.GoBytes(unsafe.Pointer(bytesPtr), C.int(size))
-	// Split into [][]byte if applicable (e.g., null-terminated or prefixed-length encoding)
-	// For simplicity, assuming here the bytes represent serialized entries.
-	return [][]byte{goBytes}
+func cBytesToGo(bytesPtr *C.char, bytesSizePtr *C.ulonglong, totalSize C.ulonglong) [][]byte {
+	var resultBytes [][]byte
+	for i := 0; i < int(totalSize); i++ {
+		size := C.int(*bytesSizePtr)
+		bytes := C.GoBytes(unsafe.Pointer(bytesPtr), size)
+		resultBytes = append(resultBytes, bytes)
+
+		bytesSizePtr = (*C.ulonglong)(unsafe.Add(unsafe.Pointer(bytesSizePtr), 8))
+		bytesPtr = (*C.char)(unsafe.Add(unsafe.Pointer(bytesPtr), int(size)))
+	}
+
+	return resultBytes
 }

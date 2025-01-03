@@ -20,7 +20,7 @@ void RoaringGeoMapReader_Delete(RoaringGeoMapReader* reader) {
 }
 
 // Wrapper for the Contains method
-int RoaringGeoMapReader_Contains(RoaringGeoMapReader* reader, const uint64_t* cellIds, uint64_t cellIdsCount, char** resultBuffer, uint64_t* resultSize) {
+int RoaringGeoMapReader_Contains(RoaringGeoMapReader* reader, const uint64_t* cellIds, uint64_t cellIdsCount, char** resultBuffer, uint64_t** resultSize, uint64_t* resultsSize) {
     if (!reader || !cellIds || !resultBuffer || !resultSize) {
         return -1; // Error: Invalid arguments
     }
@@ -37,13 +37,17 @@ int RoaringGeoMapReader_Contains(RoaringGeoMapReader* reader, const uint64_t* ce
 
         // Serialize results into a flat buffer
         size_t totalSize = 0;
+        *resultsSize = result.size();
+
+        *resultSize = new uint64_t[result.size()];
+        uint64_t* sizeWritePtr = *resultSize;
         for (const auto& vec : result) {
+            *sizeWritePtr = uint64_t(vec.size());
+            sizeWritePtr++;
             totalSize += vec.size();
         }
 
         *resultBuffer = new char[totalSize];
-        *resultSize = totalSize;
-
         char* writePtr = *resultBuffer;
         for (const auto& vec : result) {
             memcpy(writePtr, vec.data(), vec.size());
