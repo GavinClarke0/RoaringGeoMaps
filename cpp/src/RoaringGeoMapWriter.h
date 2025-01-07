@@ -31,19 +31,19 @@ class RoaringGeoMapWriter {
 public:
     RoaringGeoMapWriter(int levelIndexBucketRange);
 
-    // Writes the provided S2Region and a description (up to 512 characters).
+    // Writes the provided S2Region and associated bytes key.
     // If the description exceeds 512 characters, the method will return false.
     //
     // Parameters:
     // - region: An S2Region to be processed (e.g., S2Cap, S2Polygon, etc.)
-    // - description: A string (max 512 characters)
+    // - key/data: Byte array vector<char>
     //
     // Returns:
     // - true if the region and description were successfully processed,
     //   false if the description exceeds 512 characters.
     bool write(const S2CellUnion &region, const std::string &key);
 
-    bool build(const std::string& filePath);
+    bool build(const std::string &filePath);
 
 private:
     int levelIndexBucketRange;

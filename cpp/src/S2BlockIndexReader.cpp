@@ -27,7 +27,6 @@ S2BlockIndexReader::QueryValuesBlocks(std::set<std::pair<uint64_t, uint64_t>> &c
         uint32_t endBlock = blockIndexRange.second;
 
         for (uint32_t blockId = startBlock; blockId <= endBlock; ++blockId) {
-
             // Find the correct position to insert or update in results. We likely can assume that each value will be inserted
             // in the end block or a block near it but to keep the code consistent will use binary search for now.
             auto it = std::lower_bound(results.begin(), results.end(), blockId,
@@ -50,7 +49,6 @@ S2BlockIndexReader::QueryValuesBlocks(std::set<std::pair<uint64_t, uint64_t>> &c
         auto blockIdOption = findBlockValue(values, cellValue);
         if (blockIdOption == std::nullopt)
             continue;
-
 
         auto blockId = blockIdOption.value();
         // Find the correct position to insert or update in results.

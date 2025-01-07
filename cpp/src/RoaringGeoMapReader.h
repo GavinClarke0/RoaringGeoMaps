@@ -18,10 +18,13 @@ class RoaringGeoMapReader {
 
 public:
     // Constructor that takes a file path and constructs a read buffer
-    explicit RoaringGeoMapReader(const std::string& filePath);
+    explicit RoaringGeoMapReader(const std::string &filePath);
+
     ~RoaringGeoMapReader();
-    std::vector<std::vector<char>> Contains(const S2CellUnion& cellIds);
-    std::vector<std::vector<char>> Intersects(const S2CellUnion& cellIds);
+
+    std::vector<std::vector<char>> Contains(const S2CellUnion &cellIds);
+
+    std::vector<std::vector<char>> Intersects(const S2CellUnion &cellIds);
 
 private:
     std::unique_ptr<FileReadBuffer> f;
@@ -31,8 +34,11 @@ private:
     std::unique_ptr<CellIdColumnReader> cellIdColumn;
     std::unique_ptr<RoaringBitmapColumnReader> bitmapColumn;
 
-    std::unique_ptr<roaring::Roaring> queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &valueRanges, std::vector<uint64_t> &values);
-    std::vector<BlockValues<uint32_t>> queryBlocksByIndexes(roaring::Roaring& queryValues);
+    std::unique_ptr<roaring::Roaring>
+    queryBlockValues(uint32_t &blockId, std::vector<std::pair<uint64_t, uint64_t>> &valueRanges,
+                     std::vector<uint64_t> &values);
+
+    std::vector<BlockValues<uint32_t>> queryBlocksByIndexes(roaring::Roaring &queryValues);
 };
 
 #endif // ROARING_GEO_MAP_READER_H

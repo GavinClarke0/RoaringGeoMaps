@@ -2,13 +2,6 @@
 
 ---
 
-## See Issue #2 For Updated File Format Which will be the new approach going forward due to higher preformance: https://github.com/GavinClarke0/RoaringGeoMaps/issues/2
-
-This approaches reduces the number of cells required to be stored significantly and can lead to 30x read + write preformance improvements. This will eventually merged into main. 
-
-
----
-
 RoaringGeoMaps is a high performance and compact single-file spatial index designed to index any geospatial data that can be 
 represented by a sequence of bytes and a [S2 region cover](http://s2geometry.io/devguide/examples/coverings.html). Users 
 first construct the index by inserting bytes, and it's s2 region cover geospatial representation into the index. Once the 
@@ -21,36 +14,32 @@ RoaringGeoMaps builds on the great work or idea's of the following projects:
 1. https://roaringbitmap.org/ (Compressed Integer Sets)
 2. http://s2geometry.io/ (Integer based geospatial indexing )
 3. https://github.com/ClickHouse/ClickHouse (Column Query Patterns)
+4. https://github.com/efficient/SuRF CellId filter
 
 
 ## How the Index Works
-
-### Index Structure
-
-
-
-
-    
 
 ### Querying the Index
 
 1. **Normalize Query CellIds**:  
    The set of query `cellIds` is first normalized to the index's configured modulo.
-
-2. **Search S2 Cell Block Index for blocks which may contain child + ancestor cells of query region**
+2. **Check Cell Filter for if CellId children or intersecting cells exist in the index**
+   - A [Fast Succinct Tries](https://db.cs.cmu.edu/papers/2018/mod601-zhangA-hm.pdf) of all CellIds in the index is used 
+     to allow quick determine if a cellId or children of a cellId are present in the index. Fast Succinct Tries were selected
+     as they allow quick determination of if a range (children cells of a cell can be expressed as a int range) is 
+     present in an index in a compact format. 
+3. **Search S2 Cell Block Index for blocks which may contain child + ancestor cells of query region**
    - Find the range of all child cells for each cell we are querying for. To achieve this we preform binary
      search over the S2BlockIndex to find all blocks which may contain child cells (Cells our query covers).
    - Find the ancestor cells at each modulo of the query cells.  To achieve this we preform binary
      search over the S2BlockIndex to find all blocks which may contain ancestor cells (Cells which are 
      larger but our query intersects with).
-   - We then store each `CellId` that is in the index that matches the above criteria.  
-
-3. **Map CellIds to Keys**:
+   - We then store each `CellId` that is in the index that matches the above criteria.
+4. **Map CellIds to Keys**:
     - For each intersecting `CellId` identified above, a binary search is performed to map `CellIds` to their corresponding `key_ids` (represented as `uint32`).
     - A `key_id` is the index of the byte sequence as it is stored in the byte sequence or `key` column. 
     - Using Roaring Bitmaps, this mapping is compactly stored and efficiently queried.
-
-4. **Retrieve and Return Keys**:
+5. **Retrieve and Return Keys**:
     - For each `key_id`, retrieve its associated key/byte sequence by retrieving the data at index `key_id`. 
     - Return the set of unique keys or data matching the query.
 
@@ -84,11 +73,9 @@ Some notes/thesis on the design:
 ```
 <start of header>
     [uint64 header size N bytes]
-    [uint64 s2 cell hierarchical cover roaring bitmap offset N bytes] # Values are still present but will be removed in future version
-    [uint64 s2 cell hierarchical cover roaring bitmap size N bytes] # Values are still present but will be removed in future version
+    [uint64 s2 CellID filter Fast Succinct Tries offset N bytes] 
+    [uint64 s2 CellID filter Fast Succinct Tries size N bytes]
 
-    [uint64 s2 cell intersection roaring bitmap offset N bytes] # Values are still present but will be removed in future version
-    [uint64 s2 cell intersection roaring bitmap size N bytes] # Values are still present but will be removed in future version
     [uint64 key/byte sequence column offset N bytes]
     [uint64 key/byte sequence column size N bytes]
     [uint64 cellId column offset N bytes]

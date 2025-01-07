@@ -24,19 +24,18 @@ bool RoaringGeoMapWriter::write(const S2CellUnion &region, const std::string &ke
     filterBuilder.insertMany(region.cell_ids());
 
     // 3. Construct the set of cellIds per each region directly from the cellId vector;
-    const auto* regionPtr = reinterpret_cast<const uint64_t*>(region.data());
-    std::set<uint64_t>  regionCoverSet(regionPtr, regionPtr + region.size());
+    const auto *regionPtr = reinterpret_cast<const uint64_t *>(region.data());
+    std::set < uint64_t > regionCoverSet(regionPtr, regionPtr + region.size());
     keysToRegionCover.insert({key, std::move(regionCoverSet)});
     return true;
 }
-
 
 
 void reserve_header(FileWriteBuffer *f) {
     f->write(std::vector<char>(HEADER_SIZE, 0).data(), HEADER_SIZE);
 }
 
-bool RoaringGeoMapWriter::build(const std::string& filePath) {
+bool RoaringGeoMapWriter::build(const std::string &filePath) {
 
     // 2. Iterate through the keys -> cells build up the map of cells ids -> key_ids. The key_id of a
     // key is the uint32 index of the value when sorted in the keysToRegionCover vector. In theory, key_ids
@@ -64,15 +63,14 @@ bool RoaringGeoMapWriter::build(const std::string& filePath) {
     std::unique_ptr<FileWriteBuffer> f = std::make_unique<FileWriteBuffer>(filePath, 4096 * 4);
     reserve_header(f.get());
 
-    // 4. Write s2 CellId SuRF filter
+    // 4. Write s2 CellId filter
     auto [pos, size] = filterBuilder.build().serialize(*f);
     header.setCellIdFilterOffset(pos, size);
 
-
     // 6. Write the key_id column to the roaring geomap, the keys position in the key_id column serves as it's index.
     ByteColumnWriter keyColumn(BLOCK_SIZE);
-    for (const auto & keyToCover : keysToRegionCover) {
-        const std::string& key = keyToCover.first;
+    for (const auto &keyToCover: keysToRegionCover) {
+        const std::string &key = keyToCover.first;
         keyColumn.addBytes(std::vector<char>(key.begin(), key.end()));
     }
     // There is no index for the key's as they are indexed by their relative position in the column and thus the block
@@ -85,7 +83,7 @@ bool RoaringGeoMapWriter::build(const std::string& filePath) {
     // Write the CellId to Key_Id section
     CellIdColumnWriter cellIdColumn(BLOCK_SIZE);
     RoaringBitmapColumnWriter bitmapColumn(BLOCK_SIZE);
-    for (const auto& [cellId, keyIdBitmap] : *cellToKeyMap) {
+    for (const auto &[cellId, keyIdBitmap]: *cellToKeyMap) {
         cellIdColumn.addValue(cellId);
         bitmapColumn.addBitmap(&(*keyIdBitmap)); // TODO: compression ?
     }

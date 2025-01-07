@@ -25,8 +25,10 @@
  */
 
 
-Header::Header(int levelIndexBucketRange, int blockSize): levelIndexBucketRange(levelIndexBucketRange), blockSize(blockSize), fileType(0) {
+Header::Header(int levelIndexBucketRange, int blockSize) : levelIndexBucketRange(levelIndexBucketRange),
+                                                           blockSize(blockSize), fileType(0) {
 }
+
 Header::Header() = default;
 
 void Header::writeToFile(FileWriteBuffer &buffer) const {
@@ -85,7 +87,7 @@ void Header::setCellIdFilterOffset(uint64_t offset, uint64_t size) {
 
 
 std::pair<uint64_t, uint64_t> Header::getKeyIndexPos() const {
-    return {keyIndexOffset , keyIndexSize} ;
+    return {keyIndexOffset, keyIndexSize};
 }
 
 std::pair<uint64_t, uint64_t> Header::getCellIndexPos() const {

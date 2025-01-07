@@ -12,25 +12,26 @@ class Header {
 public:
 
     explicit Header(int, int);
+
     Header();
 
     void writeToFile(FileWriteBuffer &file) const;
 
     static Header readFromFile(FileReadBuffer &buffer);
 
-    std::pair<uint64_t, uint64_t>  getCellIdFilterOffset() const;
+    std::pair<uint64_t, uint64_t> getCellIdFilterOffset() const;
 
     void setCellIdFilterOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getKeyIndexPos() const;
+    std::pair<uint64_t, uint64_t> getKeyIndexPos() const;
 
     void setKeyIndexOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getCellIndexPos() const;
+    std::pair<uint64_t, uint64_t> getCellIndexPos() const;
 
     void setCellIndexOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getBitmapPos() const;
+    std::pair<uint64_t, uint64_t> getBitmapPos() const;
 
     void setBitmapOffset(uint64_t offset, uint64_t size);
 

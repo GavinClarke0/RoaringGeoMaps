@@ -3,9 +3,10 @@
 #include "Block.h"
 #include "BlockOffset.h"
 
-RoaringBitmapColumnWriter::RoaringBitmapColumnWriter(uint64_t blockSize): blockSize(blockSize), currentWriteBlock(blockSize) {}
+RoaringBitmapColumnWriter::RoaringBitmapColumnWriter(uint64_t blockSize) : blockSize(blockSize),
+                                                                           currentWriteBlock(blockSize) {}
 
-void RoaringBitmapColumnWriter::addBitmap(roaring::Roaring* bitmap) {
+void RoaringBitmapColumnWriter::addBitmap(roaring::Roaring *bitmap) {
     bool blockComplete = !currentWriteBlock.insertValue(bitmap, bitmap->getSizeInBytes(false));
     if (blockComplete) {
         blocks.push_back(std::move(currentWriteBlock));
@@ -14,7 +15,7 @@ void RoaringBitmapColumnWriter::addBitmap(roaring::Roaring* bitmap) {
     }
 }
 
-uint64_t RoaringBitmapColumnWriter::writeToFile(FileWriteBuffer& f) {
+uint64_t RoaringBitmapColumnWriter::writeToFile(FileWriteBuffer &f) {
     // 0. push current block which is not yet in blocks vector;
     blocks.push_back(std::move(currentWriteBlock));
     // 1. Reserve space for block index and block Index by seeking to write position beyond position for these 2 values

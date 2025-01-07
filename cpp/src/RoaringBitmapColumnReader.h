@@ -7,21 +7,23 @@
 
 class RoaringBitmapBlockReader : public BlockReader<std::unique_ptr<roaring::Roaring>> {
 public:
-    explicit RoaringBitmapBlockReader(FileReadBuffer& f, uint64_t position, uint64_t size, uint32_t entries):
-            BlockReader<std::unique_ptr<roaring::Roaring>>(f,  position,  size,  entries) {};
+    explicit RoaringBitmapBlockReader(FileReadBuffer &f, uint64_t position, uint64_t size, uint32_t entries) :
+            BlockReader<std::unique_ptr<roaring::Roaring>>(f, position, size, entries) {};
 
-    std::unique_ptr<roaring::Roaring> readValue(FileReadBuffer& f, uint64_t position, uint64_t size) override {
-       return std::make_unique<roaring::Roaring>(roaring::Roaring::read(f.view(position, size), false));
+    std::unique_ptr<roaring::Roaring> readValue(FileReadBuffer &f, uint64_t position, uint64_t size) override {
+        return std::make_unique<roaring::Roaring>(roaring::Roaring::read(f.view(position, size), false));
     };
 };
 
 class RoaringBitmapColumnReader {
 public:
-    RoaringBitmapColumnReader(FileReadBuffer& f, uint64_t startPos, uint64_t size, uint32_t entries, uint16_t blockSize);
+    RoaringBitmapColumnReader(FileReadBuffer &f, uint64_t startPos, uint64_t size, uint32_t entries,
+                              uint16_t blockSize);
+
     RoaringBitmapBlockReader ReadBlock(uint32_t blockIndex);
 
 private:
-    FileReadBuffer& f;
+    FileReadBuffer &f;
     BlockOffsetReader blockOffset;
     uint64_t startPos;
     uint64_t size;

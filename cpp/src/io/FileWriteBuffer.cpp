@@ -5,14 +5,16 @@
 #include <iostream>
 
 
-FileWriteBuffer::FileWriteBuffer(const std::string& filename, uint64_t initialSize) : filename(filename), buffer(initialSize), currentPos(0) {
+FileWriteBuffer::FileWriteBuffer(const std::string &filename, uint64_t initialSize) : filename(filename),
+                                                                                      buffer(initialSize),
+                                                                                      currentPos(0) {
     fileStream.open(filename, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
     if (!fileStream) {
         throw std::runtime_error("Failed to open file: " + filename);
     }
 }
 
-std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const char* data, uint64_t size) {
+std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const char *data, uint64_t size) {
     auto offset = currentPos;
     if (offset + size > buffer.size()) {
         buffer.resize(offset + size);
@@ -22,7 +24,7 @@ std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const char* data, uint64_t 
     return {offset, size};
 }
 
-std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const std::function<void(char*)>& func, uint64_t size) {
+std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const std::function<void(char *)> &func, uint64_t size) {
     auto offset = currentPos;
     if (offset + size > buffer.size()) {
         buffer.resize(offset + size);
@@ -34,7 +36,8 @@ std::pair<uint64_t, uint64_t> FileWriteBuffer::write(const std::function<void(ch
     return {offset, size};
 }
 
-std::pair<uint64_t, uint64_t> FileWriteBuffer::write32ByteAligned(const std::function<void(char*)>& func, uint64_t size) {
+std::pair<uint64_t, uint64_t>
+FileWriteBuffer::write32ByteAligned(const std::function<void(char *)> &func, uint64_t size) {
     // find next set of bytes that is 32 byte aligned;
     auto offset = (currentPos + 31) & ~31; // Find index that is 32 byte aligned.
     if (offset + size > buffer.size()) {

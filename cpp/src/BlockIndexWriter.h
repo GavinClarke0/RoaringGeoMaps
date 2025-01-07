@@ -7,7 +7,7 @@
 #include "unordered_set"
 #include "VectorView.h"
 
-template <typename T>
+template<typename T>
 class BlockIndexWriter {
     static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value,
                   "BlockIndexReader only supports uint32_t and uint64_t types.");
@@ -19,9 +19,9 @@ public:
         values.push_back(value);
     }
 
-    uint64_t writeToFile(FileWriteBuffer& f) const {
+    uint64_t writeToFile(FileWriteBuffer &f) const {
         uint64_t size = 0;
-        for (auto& value : values) {
+        for (auto &value: values) {
             size += appendToBuffer(f, value);
         }
         return size;
@@ -33,7 +33,8 @@ public:
 
 private:
     std::vector<T> values;
-    uint64_t appendToBuffer(FileWriteBuffer& f, T value) const;
+
+    uint64_t appendToBuffer(FileWriteBuffer &f, T value) const;
 };
 
 #endif //ROARINGGEOMAPS_BLOCKINDEXWRITER_H

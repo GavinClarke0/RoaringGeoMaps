@@ -6,17 +6,12 @@ CellFilter::CellFilter(const std::vector<std::string> &values)
 
 CellFilter::CellFilter() = default;
 
-CellFilter::CellFilter(surf::SuRF *filter) : filter(filter) {}
-
-CellFilter::~CellFilter() {
-//    if (filter != nullptr )
-//   	    filter->destroy();
-//   	delete filter;
+CellFilter::CellFilter(surf::SuRF *filter) : filter(filter) {
 }
 
-//void CellFilter::Builder::insert(S2CellId& value) {
-//    values.push_back(surf::uint64ToString(value.id()));
-//}
+CellFilter::~CellFilter() {
+    delete filter;
+}
 
 CellFilter CellFilter::Builder::build() {
     std::sort(values.begin(), values.end());

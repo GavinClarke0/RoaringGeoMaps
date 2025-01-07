@@ -10,8 +10,9 @@
 
 class Uint64BlockWriter : public FixedBlockWriter<uint64_t> {
 public:
-    explicit Uint64BlockWriter(uint64_t blockSize): FixedBlockWriter<uint64_t>(blockSize) {};
-    void writeValue(FileWriteBuffer& f, uint64_t value) {
+    explicit Uint64BlockWriter(uint64_t blockSize) : FixedBlockWriter<uint64_t>(blockSize) {};
+
+    void writeValue(FileWriteBuffer &f, uint64_t value) {
         writeLittleEndianUint64(f, value);
     };
 };
@@ -19,8 +20,11 @@ public:
 class CellIdColumnWriter {
 public:
     explicit CellIdColumnWriter(uint64_t blockSize);
+
     void addValue(uint64_t value);
-    uint64_t writeToFile(FileWriteBuffer& f);
+
+    uint64_t writeToFile(FileWriteBuffer &f);
+
     BlockIndexWriter<uint64_t> blockIndex(); // Returns a block index for the current state of the
 
 private:
