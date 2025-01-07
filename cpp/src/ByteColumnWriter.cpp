@@ -3,9 +3,9 @@
 #include "Block.h"
 #include "BlockOffset.h"
 
-ByteColumnWriter::ByteColumnWriter(uint64_t blockSize): blockSize(blockSize), currentWriteBlock(blockSize) {}
+ByteColumnWriter::ByteColumnWriter(uint64_t blockSize) : blockSize(blockSize), currentWriteBlock(blockSize) {}
 
-void ByteColumnWriter::addBytes(const std::vector<char>& data) {
+void ByteColumnWriter::addBytes(const std::vector<char> &data) {
     bool blockComplete = !currentWriteBlock.insertValue(data, data.size());
     if (blockComplete) {
         blocks.push_back(std::move(currentWriteBlock));
@@ -14,7 +14,7 @@ void ByteColumnWriter::addBytes(const std::vector<char>& data) {
     }
 }
 
-uint64_t ByteColumnWriter::writeToFile(FileWriteBuffer& f) {
+uint64_t ByteColumnWriter::writeToFile(FileWriteBuffer &f) {
 
     // 0. push current block which is not yet in blocks vector;
     blocks.push_back(std::move(currentWriteBlock));

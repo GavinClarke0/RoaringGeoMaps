@@ -25,18 +25,17 @@
  */
 
 
-Header::Header(int levelIndexBucketRange, int blockSize): levelIndexBucketRange(levelIndexBucketRange), blockSize(blockSize), fileType(0) {
+Header::Header(int levelIndexBucketRange, int blockSize) : levelIndexBucketRange(levelIndexBucketRange),
+                                                           blockSize(blockSize), fileType(0) {
 }
+
 Header::Header() = default;
 
 void Header::writeToFile(FileWriteBuffer &buffer) const {
 
     writeLittleEndianUint64(buffer, HEADER_SIZE);
-    writeLittleEndianUint64(buffer, coverBitmapOffset);
-    writeLittleEndianUint64(buffer, coverBitmapSize);
-    writeLittleEndianUint64(buffer, containsBitmapOffset);
-    writeLittleEndianUint64(buffer, containsBitmapSize);
-
+    writeLittleEndianUint64(buffer, cellIdFilterOffset);
+    writeLittleEndianUint64(buffer, cellIdFilterSize);
     writeLittleEndianUint64(buffer, keyIndexOffset);
     writeLittleEndianUint64(buffer, keyIndexSize);
     writeLittleEndianUint64(buffer, cellIndexOffset);
@@ -50,58 +49,45 @@ void Header::writeToFile(FileWriteBuffer &buffer) const {
     writeLittleEndianUint8(buffer, levelIndexBucketRange);
     writeLittleEndianUint16(buffer, blockSize);
     writeLittleEndianUint8(buffer, fileType); // Type 1 currently means standard non block compressed format.
-    buffer.write(std::vector<char>(28, 0).data(), 28);
+    buffer.write(std::vector<char>(44, 0).data(), 4);
 }
 
 Header Header::readFromFile(FileReadBuffer &buffer) {
 
     Header header = Header();
     auto headerOffset = readLittleEndianUint64(buffer, 0); // TODO: figure out a case where we will need this
-    header.coverBitmapOffset = readLittleEndianUint64(buffer, 8);
-    header.coverBitmapSize = readLittleEndianUint64(buffer, 16);
-    header.containsBitmapOffset = readLittleEndianUint64(buffer, 24);
-    header.containsBitmapSize = readLittleEndianUint64(buffer, 32);
+    header.cellIdFilterOffset = readLittleEndianUint64(buffer, 8);
+    header.cellIdFilterSize = readLittleEndianUint64(buffer, 16);
+    header.keyIndexOffset = readLittleEndianUint64(buffer, 24);
+    header.keyIndexSize = readLittleEndianUint64(buffer, 32);
+    header.cellIndexOffset = readLittleEndianUint64(buffer, 40);
+    header.cellIndexSize = readLittleEndianUint64(buffer, 48);
+    header.roaringIndexOffset = readLittleEndianUint64(buffer, 56);
+    header.roaringIndexSize = readLittleEndianUint64(buffer, 64);
 
-    header.keyIndexOffset = readLittleEndianUint64(buffer, 40);
-    header.keyIndexSize = readLittleEndianUint64(buffer, 48);
-    header.cellIndexOffset = readLittleEndianUint64(buffer, 56);
-    header.cellIndexSize = readLittleEndianUint64(buffer, 64);
-    header.roaringIndexOffset = readLittleEndianUint64(buffer, 72);
-    header.roaringIndexSize = readLittleEndianUint64(buffer, 80);
+    header.keyIndexEntries = readLittleEndianUint32(buffer, 72);
+    header.cellIndexEntries = readLittleEndianUint32(buffer, 76);
 
-    header.keyIndexEntries = readLittleEndianUint32(buffer, 88);
-    header.cellIndexEntries = readLittleEndianUint32(buffer, 92);
-
-    header.levelIndexBucketRange = readLittleEndianUint8(buffer, 96);
-    header.blockSize = readLittleEndianUint16(buffer, 97);
-    header.fileType = readLittleEndianUint8(buffer, 99); // Type 1 currently means standard non block compressed format.
+    header.levelIndexBucketRange = readLittleEndianUint8(buffer, 80);
+    header.blockSize = readLittleEndianUint16(buffer, 81);
+    header.fileType = readLittleEndianUint8(buffer, 83);// Type 1 currently means standard non block compressed format.
     return header;
 }
 
 
-std::pair<uint64_t, uint64_t> Header::getCoverBitmapOffset() const {
-    return {coverBitmapOffset, coverBitmapSize};
+std::pair<uint64_t, uint64_t> Header::getCellIdFilterOffset() const {
+    return {cellIdFilterOffset, cellIdFilterSize};
 }
 
 
-void Header::setCoverBitmapOffset(uint64_t offset, uint64_t size) {
-    Header::coverBitmapOffset = offset;
-    Header::coverBitmapSize = size;
-}
-
-
-std::pair<uint64_t, uint64_t> Header::getContainsBitmapOffset() const {
-    return {containsBitmapOffset, containsBitmapSize};
-}
-
-void Header::setContainsBitmapOffset(uint64_t offset, uint64_t size) {
-    Header::containsBitmapOffset = offset;
-    Header::containsBitmapSize = size;
+void Header::setCellIdFilterOffset(uint64_t offset, uint64_t size) {
+    Header::cellIdFilterOffset = offset;
+    Header::cellIdFilterSize = size;
 }
 
 
 std::pair<uint64_t, uint64_t> Header::getKeyIndexPos() const {
-    return {keyIndexOffset , keyIndexSize} ;
+    return {keyIndexOffset, keyIndexSize};
 }
 
 std::pair<uint64_t, uint64_t> Header::getCellIndexPos() const {

@@ -142,8 +142,8 @@ int main() {
     RoaringGeoMapWriter writer(3);
 
     // Number of circles and radius of circles in meters for benchmarking
-    auto circleCountTestCases = {5000, 10000, 50000};
-    auto radiusMetersTestCases = {5, 10, 100, 1000};
+    auto circleCountTestCases = {50000};
+    auto radiusMetersTestCases = {1000};
 
     for (auto circleCount : circleCountTestCases) {
         for (auto radiusMeters: radiusMetersTestCases) {
@@ -174,7 +174,7 @@ int main() {
             std::cout << "Init benchmark completed in " << init_duration << " ms.\n";
 
             auto start_query = std::chrono::high_resolution_clock::now();
-            benchmarkQueryExecution(reader, 10000, indexedCellIds);
+            benchmarkQueryExecution(reader, 2000, indexedCellIds);
             auto end_query = std::chrono::high_resolution_clock::now();
             auto query_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_query - start_query).count();
             std::cout << "Query benchmark completed in " << query_duration << " ms.\n";

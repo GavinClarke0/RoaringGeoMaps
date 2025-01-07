@@ -5,10 +5,12 @@
 #include "WriteHelpers.h"
 #include "VectorView.h"
 
-uint64_t determineBlocks(uint32_t blockSize, uint32_t totalEntries);
+inline uint64_t determineBlocks(uint32_t blockSize, uint32_t totalEntries) {
+    return totalEntries % blockSize > 0 ? (totalEntries / blockSize) + 1 : totalEntries / blockSize;
+}
 
-template <typename T>
-class BlockValues{
+template<typename T>
+class BlockValues {
 public:
     uint32_t blockId;
     std::vector<T> values;
@@ -17,21 +19,22 @@ public:
 template<typename T>
 class BlockWriter {
 public:
-    explicit BlockWriter(uint64_t blockSize): blockSize(blockSize) {};
+    explicit BlockWriter(uint64_t blockSize) : blockSize(blockSize) {};
 
-    std::pair<uint64_t, T> WriteBlock(FileWriteBuffer& f) {
+    std::pair<uint64_t, T> WriteBlock(FileWriteBuffer &f) {
         uint64_t valueDataSize = 0;
-        for (uint64_t size : valueSizes) {
+        for (uint64_t size: valueSizes) {
             valueDataSize += size;
             writeLittleEndianUint64(f, valueDataSize);
         }
-        for (T value : values) {
+        for (T value: values) {
             writeValue(f, value);
         }
-        return {(values.size() * sizeof(uint64_t)) + valueDataSize, values.back()}; // Returns size of block and largest value in block;
+        return {(values.size() * sizeof(uint64_t)) + valueDataSize,
+                values.back()}; // Returns size of block and largest value in block;
     };
 
-    std::pair<uint64_t, T> WriteBlockZstdCompressed(FileWriteBuffer& f) {
+    std::pair<uint64_t, T> WriteBlockZstdCompressed(FileWriteBuffer &f) {
         return {};
     }; // Returns offset of block, largest value in block, and values in block
 
@@ -45,7 +48,7 @@ public:
     };
 
     // Must be overridden by implementing class
-    virtual void writeValue(FileWriteBuffer& f, T value) {
+    virtual void writeValue(FileWriteBuffer &f, T value) {
         auto x = 10;
     };
 private:
@@ -57,16 +60,17 @@ private:
 template<typename T>
 class FixedBlockWriter {
 public:
-    explicit FixedBlockWriter(uint64_t blockSize): blockSize(blockSize) {}
+    explicit FixedBlockWriter(uint64_t blockSize) : blockSize(blockSize) {}
 
-    std::pair<uint64_t, T> WriteBlock(FileWriteBuffer& f) {
-        for (uint64_t value : values) {
+    std::pair<uint64_t, T> WriteBlock(FileWriteBuffer &f) {
+        for (uint64_t value: values) {
             writeValue(f, value);
         }
-        return {values.size() * sizeof(T), values.back()}; // Returns offset of block, largest value in block, and values in block;
+        return {values.size() * sizeof(T),
+                values.back()}; // Returns offset of block, largest value in block, and values in block;
     };
 
-    std::pair<uint64_t, T> WriteBlockZstdCompressed(FileWriteBuffer& f) {
+    std::pair<uint64_t, T> WriteBlockZstdCompressed(FileWriteBuffer &f) {
         return {};
     }; // Returns offset of block;
 
@@ -78,8 +82,9 @@ public:
         values.emplace_back(value);
         return true;
     };
+
     // Must be overridden by implementing class
-    virtual void writeValue(FileWriteBuffer& f, T value) {};
+    virtual void writeValue(FileWriteBuffer &f, T value) {};
 
 private:
     uint64_t blockSize;
@@ -90,22 +95,22 @@ private:
 template<typename T>
 class BlockReader {
 public:
-    explicit BlockReader(FileReadBuffer& f, uint64_t position, uint64_t size, uint64_t entries):
-    f(f),
-    position(position),
-    valuePosition(position + (entries * sizeof(uint64_t))), // start position of the values.
-    size(size),
-    entries(entries),
-    offsets(VectorView<uint64_t>(f, position, entries)){};
+    explicit BlockReader(FileReadBuffer &f, uint64_t position, uint64_t size, uint64_t entries) :
+            f(f),
+            position(position),
+            valuePosition(position + (entries * sizeof(uint64_t))), // start position of the values.
+            size(size),
+            entries(entries),
+            offsets(VectorView<uint64_t>(f, position, entries)) {};
 
-    std::vector<T> readIndexes(const std::vector<uint32_t>& indexes) {
+    std::vector<T> readIndexes(const std::vector<uint32_t> &indexes) {
         std::vector<T> valueRefs;
         for (auto index: indexes) {
-            uint64_t offset = index == 0 ? 0: offsets[index-1];
+            uint64_t offset = index == 0 ? 0 : offsets[index - 1];
             auto pos = valuePosition + offset;
             std::integral auto valueSize = index == 0
-                                             ? offsets[index]
-                                             : offsets[index] - offsets[index-1];
+                                           ? offsets[index]
+                                           : offsets[index] - offsets[index - 1];
             valueRefs.emplace_back(readValue(f, pos, valueSize));
         }
         return valueRefs;
@@ -114,9 +119,9 @@ public:
     // TODO: we can compact this into a more granular method that reads a specific range in a iterator. We can then
     // make a overall method that reads both indexes and ranges which searches from the nearest offset to reduce search
     // space.
-    std::vector<T> readIndexRanges(const std::vector<std::pair<uint32_t, uint32_t>>& indexRanges) {
+    std::vector<T> readIndexRanges(const std::vector<std::pair<uint32_t, uint32_t>> &indexRanges) {
         std::vector<T> valueRefs;
-        for (const auto& range : indexRanges) {
+        for (const auto &range: indexRanges) {
             uint32_t start = range.first;
             uint32_t end = range.second;
             // Validate range boundaries
@@ -139,13 +144,14 @@ public:
 
         return valueRefs;
     };
+
     // Must be overridden by implementing class
-    virtual T readValue(FileReadBuffer& f, uint64_t position, uint64_t size) {
+    virtual T readValue(FileReadBuffer &_f, uint64_t _position, uint64_t _size) {
         return {};
     };
 
 private:
-    FileReadBuffer& f;
+    FileReadBuffer &f;
     uint64_t position;
     uint64_t valuePosition;
     uint64_t size;
@@ -157,10 +163,14 @@ private:
 template<std::integral T>
 class FixedBlockReader {
 public:
-    explicit FixedBlockReader(FileReadBuffer& f, uint64_t position, uint64_t size, uint64_t entries): f(f), position(position), size(size), entries(entries),
-    values(VectorView<uint64_t>(f, position, entries)){};
+    explicit FixedBlockReader(FileReadBuffer &f, uint64_t position, uint64_t size, uint64_t entries) : f(f), position(
+            position), size(size), entries(entries),
+                                                                                                       values(VectorView<uint64_t>(
+                                                                                                               f,
+                                                                                                               position,
+                                                                                                               entries)) {};
 
-    std::vector<uint32_t> queryValueIndexes(const std::vector<T>& queryValues) {
+    std::vector<uint32_t> queryValueIndexes(const std::vector<T> &queryValues) {
         // TODO: validate it is not out of bounds
         std::vector<uint32_t> indexes;
         for (auto value: queryValues) {
@@ -176,11 +186,12 @@ public:
         return indexes;
     };
 
-    std::vector<std::pair<uint32_t, uint32_t>> queryValueRangesIndexes(const std::vector<std::pair<T, T>>& queryRanges) {
+    std::vector<std::pair<uint32_t, uint32_t>>
+    queryValueRangesIndexes(const std::vector<std::pair<T, T>> &queryRanges) {
         // TODO: validate it is not out of bounds
         std::vector<std::pair<uint32_t, uint32_t>> indexRanges;
 
-        for (const auto& range : queryRanges) {
+        for (const auto &range: queryRanges) {
             // Find the start of the range
             auto lowerIt = std::lower_bound(values.begin(), values.end(), range.first);
             // Find the end of the range (exclusive)
@@ -210,7 +221,7 @@ public:
         return indexRanges;
     };
 private:
-    FileReadBuffer& f;
+    FileReadBuffer &f;
     uint64_t position;
     uint64_t size;
     uint64_t entries;

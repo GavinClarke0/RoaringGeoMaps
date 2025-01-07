@@ -2,7 +2,7 @@
 #include "WriteHelpers.h"
 #include "Block.h"
 
-CellIdColumnWriter::CellIdColumnWriter(uint64_t blockSize): blockSize(blockSize), currentWriteBlock(blockSize) {}
+CellIdColumnWriter::CellIdColumnWriter(uint64_t blockSize) : blockSize(blockSize), currentWriteBlock(blockSize) {}
 
 void CellIdColumnWriter::addValue(uint64_t value) {
     bool blockComplete = !currentWriteBlock.insertValue(value);
@@ -13,7 +13,7 @@ void CellIdColumnWriter::addValue(uint64_t value) {
     }
 }
 
-uint64_t CellIdColumnWriter::writeToFile(FileWriteBuffer& f) {
+uint64_t CellIdColumnWriter::writeToFile(FileWriteBuffer &f) {
     // 0. Write current uncompleted block to list of blocks.
     blocks.push_back(std::move(currentWriteBlock));
     // 1. Reserve space for block index and block Index by seeking to write position beyond position for these 2 values

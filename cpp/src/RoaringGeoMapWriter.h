@@ -6,19 +6,20 @@
 #include "s2/s2region.h"
 #include "s2/s2cell_union.h"
 #include "roaring64map.hh"
+#include "CellFilter.h"
 
-
-inline bool compareBitMapMin(std::pair<std::string, roaring::Roaring64Map> a, std::pair<std::string, roaring::Roaring64Map> b) {
+inline bool
+compareBitMapMin(std::pair<std::string, roaring::Roaring64Map> a, std::pair<std::string, roaring::Roaring64Map> b) {
     return a.second.minimum() < b.second.minimum();
 }
 
 using CellKeyIdsMap = std::map<uint64_t, std::unique_ptr<roaring::Roaring>>;
-using KeyCoverPair = std::pair<std::string, roaring::Roaring64Map>;
+using KeyCoverPair = std::pair<std::string, std::set<uint64_t>>;
 
 
 struct CompareKeyCoverPair {
-    bool operator()(const KeyCoverPair& a, const KeyCoverPair& b) const {
-        return a.second.minimum() < b.second.minimum();
+    bool operator()(const KeyCoverPair &a, const KeyCoverPair &b) const {
+        return *a.second.begin() < *b.second.begin();
     }
 };
 
@@ -29,22 +30,25 @@ class RoaringGeoMapWriter {
 
 public:
     RoaringGeoMapWriter(int levelIndexBucketRange);
-    // Writes the provided S2Region and a description (up to 512 characters).
+
+    // Writes the provided S2Region and associated bytes key.
     // If the description exceeds 512 characters, the method will return false.
     //
     // Parameters:
     // - region: An S2Region to be processed (e.g., S2Cap, S2Polygon, etc.)
-    // - description: A string (max 512 characters)
+    // - key/data: Byte array vector<char>
     //
     // Returns:
     // - true if the region and description were successfully processed,
     //   false if the description exceeds 512 characters.
-    bool write(const S2CellUnion& region, const std::string& key);
-    bool build(std::string filePath);
+    bool write(const S2CellUnion &region, const std::string &key);
+
+    bool build(const std::string &filePath);
+
 private:
     int levelIndexBucketRange;
-    roaring::Roaring64Map indexRegionContainsBitMap;
-    roaring::Roaring64Map indexRegionCoversBitMap;
+    CellFilter::Builder filterBuilder;
+    // TODO: We can use a regular hash set and then use a value to store the minimum value for sorting.
     std::multiset<KeyCoverPair, CompareKeyCoverPair> keysToRegionCover;
 };
 

@@ -7,15 +7,18 @@
 
 class FileReadBuffer {
 public:
-    explicit FileReadBuffer(const std::string& filename);
+    explicit FileReadBuffer(const std::string &filename);
+
     ~FileReadBuffer();
 
-    const char* data() const;
+    const char *data() const;
+
     uint64_t size() const;
-    const char* view(uint64_t offset, uint64_t length) const;
+
+    const char *view(uint64_t offset, uint64_t length) const;
 
 private:
-    char* buffer;
+    char *buffer;
     uint64_t buffer_size;
 };
 

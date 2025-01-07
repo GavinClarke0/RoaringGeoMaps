@@ -12,29 +12,26 @@ class Header {
 public:
 
     explicit Header(int, int);
+
     Header();
 
     void writeToFile(FileWriteBuffer &file) const;
 
     static Header readFromFile(FileReadBuffer &buffer);
 
-    std::pair<uint64_t, uint64_t>  getCoverBitmapOffset() const;
+    std::pair<uint64_t, uint64_t> getCellIdFilterOffset() const;
 
-    void setCoverBitmapOffset(uint64_t offset, uint64_t size);
+    void setCellIdFilterOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getContainsBitmapOffset() const;
-
-    void setContainsBitmapOffset(uint64_t offset, uint64_t size);
-
-    std::pair<uint64_t, uint64_t>  getKeyIndexPos() const;
+    std::pair<uint64_t, uint64_t> getKeyIndexPos() const;
 
     void setKeyIndexOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getCellIndexPos() const;
+    std::pair<uint64_t, uint64_t> getCellIndexPos() const;
 
     void setCellIndexOffset(uint64_t offset, uint64_t size);
 
-    std::pair<uint64_t, uint64_t>  getBitmapPos() const;
+    std::pair<uint64_t, uint64_t> getBitmapPos() const;
 
     void setBitmapOffset(uint64_t offset, uint64_t size);
 
@@ -59,10 +56,8 @@ public:
     void setFileType(uint8_t fileType);
 
 private:
-    uint64_t coverBitmapOffset = 0;
-    uint64_t coverBitmapSize = 0;
-    uint64_t containsBitmapOffset = 0;
-    uint64_t containsBitmapSize = 0;
+    uint64_t cellIdFilterOffset = 0;
+    uint64_t cellIdFilterSize = 0;
     uint64_t keyIndexOffset = 0;
     uint32_t keyIndexSize = 0;
     uint64_t cellIndexOffset = 0;
@@ -74,7 +69,6 @@ private:
     uint8_t levelIndexBucketRange = 1;
     uint16_t blockSize;
     uint8_t fileType;
-
 };
 
 #endif // ROARINGGEOMAPS_HEADER_H
